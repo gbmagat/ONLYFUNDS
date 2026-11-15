@@ -34,7 +34,7 @@ class AnalyticsService {
     final basicInsights = _getBasicFinancialMetrics(transactions);
     final predictions = await _predictFutureExpenses(transactions);
     final recommendations = _getPersonalizedRecommendations(transactions, basicInsights);
-    final alerts = _generateRealTimeAlerts(basicInsights);
+    final alerts = _generateRealTimeAlerts(transactions);
 
     return {
       'basicMetrics': basicInsights,
@@ -180,59 +180,95 @@ class AnalyticsService {
   }
 
   /// Real-time Alert Generation
-  List<Map<String, dynamic>> _generateRealTimeAlerts(Map<String, dynamic> metrics) {
+  ///
+  /// Every alert compares the current calendar month against the monthly
+  /// average of the earlier months in the fetched history, so both sides of
+  /// each comparison cover the same length of time.
+  List<Map<String, dynamic>> _generateRealTimeAlerts(List<Map<String, dynamic>> transactions) {
     final alerts = <Map<String, dynamic>>[];
     final currentDate = DateTime.now();
     final daysInMonth = DateTime(currentDate.year, currentDate.month + 1, 0).day;
-    final daysPassed = currentDate.day;
-    final expectedSpendingRatio = daysPassed / daysInMonth;
+    final monthProgress = currentDate.day / daysInMonth;
+    final currentMonthKey = _monthKey(currentDate);
 
-    final totalExpenses = _safeConvertToDouble(metrics['totalExpenses']);
-    final totalIncome = _safeConvertToDouble(metrics['totalIncome']);
-    final categorySpending = _safeConvertToMap<String, double>(metrics['categorySpending']);
-    final savings = _safeConvertToDouble(metrics['savings']);
+    final currentMonth = <Map<String, dynamic>>[];
+    final earlierMonths = <Map<String, dynamic>>[];
+    final earlierMonthKeys = <String>{};
+    for (final transaction in transactions) {
+      final key = _monthKey(transaction['date'] as DateTime);
+      if (key == currentMonthKey) {
+        currentMonth.add(transaction);
+      } else {
+        earlierMonths.add(transaction);
+        earlierMonthKeys.add(key);
+      }
+    }
+    final earlierMonthCount = earlierMonthKeys.length;
 
-    // Budget overspending alerts
-    for (final category in priorityCategories) {
-      final spent = _safeConvertToDouble(categorySpending[category]);
-      final expectedSpent = (_safeConvertToDouble(metrics['averageMonthlyExpense']) * expectedSpendingRatio);
-      
-      if (spent > expectedSpent * 1.5) {
-        alerts.add({
-          'type': 'spending_spike',
-          'category': category,
-          'message': 'Unusual spending spike in $category detected',
-          'severity': 'high',
-          'amount': spent - expectedSpent,
-        });
+    final currentIncome = _sumByType(currentMonth, 'income');
+    final currentSavings = currentIncome - _sumByType(currentMonth, 'expense');
+
+    // Spending spike alerts: this month's spending in a category is already
+    // well above what a whole month usually costs. Needs earlier history.
+    if (earlierMonthCount > 0) {
+      final currentSpending = _getCategorySpending(currentMonth);
+      final earlierSpending = _getCategorySpending(earlierMonths);
+
+      for (final category in priorityCategories) {
+        final spent = currentSpending[category] ?? 0.0;
+        final typicalMonth = (earlierSpending[category] ?? 0.0) / earlierMonthCount;
+
+        if (typicalMonth > 0 && spent > typicalMonth * 1.5) {
+          alerts.add({
+            'type': 'spending_spike',
+            'category': category,
+            'message': 'Unusual spending spike in $category detected',
+            'severity': 'high',
+            'amount': spent - typicalMonth,
+          });
+        }
       }
     }
 
-    // Savings progress alert
-    if (savings > 0 && expectedSpendingRatio > savingsGoalProgress) {
-      final savingsTarget = (totalIncome * 0.2); // 20% savings target
-      if (savings < savingsTarget * savingsGoalProgress) {
+    // Savings progress alert, checked once the month is more than half over
+    if (currentIncome > 0 && monthProgress > savingsGoalProgress) {
+      final savingsTarget = (currentIncome * 0.2); // 20% savings target
+      if (currentSavings < savingsTarget * savingsGoalProgress) {
         alerts.add({
           'type': 'savings_alert',
           'message': 'You\'re behind on savings goals for this month',
           'severity': 'medium',
-          'needed': savingsTarget - savings,
+          'needed': savingsTarget - currentSavings,
         });
       }
     }
 
-    // Income drop alert (compared to last month average)
-    final avgMonthlyIncome = _safeConvertToDouble(metrics['averageMonthlyIncome']);
-    if (avgMonthlyIncome > 0 && totalIncome < avgMonthlyIncome * (1 - incomeDrop)) {
+    // Income drop alert: this month against the earlier monthly average.
+    // Also waits for mid-month, since income often arrives partway through.
+    final typicalIncome = earlierMonthCount > 0
+        ? _sumByType(earlierMonths, 'income') / earlierMonthCount
+        : 0.0;
+    if (typicalIncome > 0 &&
+        monthProgress > 0.5 &&
+        currentIncome < typicalIncome * (1 - incomeDrop)) {
       alerts.add({
         'type': 'income_drop',
         'message': 'Income is lower than usual this month',
         'severity': 'medium',
-        'dropPercentage': ((avgMonthlyIncome - totalIncome) / avgMonthlyIncome * 100).round(),
+        'dropPercentage': ((typicalIncome - currentIncome) / typicalIncome * 100).round(),
       });
     }
 
     return alerts;
+  }
+
+  String _monthKey(DateTime date) =>
+      "${date.year}-${date.month.toString().padLeft(2, '0')}";
+
+  double _sumByType(List<Map<String, dynamic>> transactions, String type) {
+    return transactions
+        .where((t) => _safeConvertToString(t['type']) == type)
+        .fold(0.0, (sum, item) => sum + _safeConvertToDouble(item['amount']));
   }
 
   /// FIXED: Proper type handling for Firestore data
@@ -292,20 +328,6 @@ class AnalyticsService {
     if (value == null) return '';
     if (value is String) return value;
     return value.toString();
-  }
-
-  /// Safe conversion for nested maps
-  Map<K, V> _safeConvertToMap<K, V>(dynamic value) {
-    if (value == null) return <K, V>{};
-    if (value is Map<K, V>) return value;
-    if (value is Map) {
-      try {
-        return Map<K, V>.from(value);
-      } catch (e) {
-        return <K, V>{};
-      }
-    }
-    return <K, V>{};
   }
 
   /// FIXED: Safe map access in basic metrics
