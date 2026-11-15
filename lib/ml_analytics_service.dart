@@ -47,19 +47,14 @@ class AnalyticsService {
     };
   }
 
-  /// ML: Expense Prediction using Linear Regression - FIXED VERSION
+  /// ML: Expense Prediction using Linear Regression
   Future<Map<String, dynamic>> _predictFutureExpenses(List<Map<String, dynamic>> transactions) async {
     try {
-      // Convert to proper numeric types and ensure we have enough data
-      final List<List<double>> expenseData = transactions
+      final expenses = transactions
           .where((t) => _safeConvertToString(t['type']) == 'expense')
-          .map((t) {
-            final date = t['date'] as DateTime;
-            return [date.millisecondsSinceEpoch.toDouble(), _safeConvertToDouble(t['amount'])];
-          })
           .toList();
 
-      if (expenseData.length < 10) {
+      if (expenses.length < 10) {
         return {
           'predictedAmount': null,
           'confidence': 0.0,
@@ -67,9 +62,23 @@ class AnalyticsService {
         };
       }
 
-      // Create dataframe with proper column names
+      // The feature is days since the earliest expense. Raw epoch milliseconds
+      // (around 1.7e12) are too large to fit reliably with float32 arithmetic.
+      final originMs = expenses
+          .map((t) => (t['date'] as DateTime).millisecondsSinceEpoch)
+          .reduce((a, b) => a < b ? a : b);
+      double toDays(DateTime date) =>
+          (date.millisecondsSinceEpoch - originMs) / Duration.millisecondsPerDay;
+
+      final List<List<double>> expenseData = expenses
+          .map((t) => [toDays(t['date'] as DateTime), _safeConvertToDouble(t['amount'])])
+          .toList();
+
+      // headerExists must be false: by default DataFrame treats the first row
+      // as column names and drops it from the data.
       final dataframe = DataFrame(
         expenseData,
+        headerExists: false,
         header: ['timestamp', 'amount'],
       );
       
@@ -82,10 +91,10 @@ class AnalyticsService {
       
       // Predict for next month
       final nextMonth = DateTime.now().add(const Duration(days: 30));
-      final nextMonthTimestamp = nextMonth.millisecondsSinceEpoch.toDouble();
       
       final predictionData = DataFrame(
-        [[nextMonthTimestamp]],
+        [[toDays(nextMonth)]],
+        headerExists: false,
         header: ['timestamp'],
       );
       
@@ -94,11 +103,11 @@ class AnalyticsService {
       // Extract the prediction value safely
       double predictedAmount = 0.0;
       if (prediction.rows.isNotEmpty && prediction.rows.first.isNotEmpty) {
-        predictedAmount = prediction.rows.first.first;
+        predictedAmount = _safeConvertToDouble(prediction.rows.first.first);
       }
 
       return {
-        'predictedAmount': predictedAmount > 0 ? predictedAmount : null,
+        'predictedAmount': predictedAmount.isFinite && predictedAmount > 0 ? predictedAmount : null,
         'nextMonth': nextMonth,
         'confidence': _calculatePredictionConfidence(expenseData),
         'trend': _calculateExpenseTrend(expenseData),
