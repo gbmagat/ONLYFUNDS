@@ -22,7 +22,7 @@ For changes to records or totals, follow [the demo walkthrough](docs/DEMO.md). A
 - Combine savings deduction and saved-total updates.
 - Verify in an emulator that account deletion removes nested records when monthly parent documents do not exist.
 - Add service, widget, and integration tests for budgeting flows.
-- Evaluate regression on time-ordered data with a baseline and held-out error metrics; distinguish transaction estimates from monthly totals.
+- Evaluate the monthly-total regression against a baseline with held-out error metrics, and test it with seeded multi-month data.
 - Persist notification settings/history and clarify sample alerts in the UI.
 - Add real screenshots and verified platform/build instructions.
 

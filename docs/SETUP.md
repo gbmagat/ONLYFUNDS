@@ -45,7 +45,7 @@ Android is the simplest starting point on Windows. iOS requires macOS, Xcode, an
 | Unsupported Firebase platform | Committed options support Android/iOS only. Configure other platforms and verify plugin compatibility first. |
 | Empty dashboard/history | Add income first. These views read the current calendar month. |
 | Expense rejected | The expense exceeds the recorded monthly balance. Savings deposits also consume that balance. |
-| Prediction unavailable | At least ten expense records are required. Fitting errors or non-positive results can also prevent a prediction. |
+| Prediction unavailable | Expenses in at least three completed calendar months are required; the current month does not count. Fitting errors or non-positive results can also prevent a prediction. |
 | Notification settings reset | Preferences/history are held in memory; persistent storage is not implemented. |
 
 See [development and validation](../CONTRIBUTING.md) for checks. The starter counter test does not validate OnlyFunds.

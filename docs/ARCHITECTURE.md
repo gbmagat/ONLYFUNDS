@@ -50,11 +50,11 @@ Account deletion reauthenticates, deletes nested records month by month, then re
 
 - Fetches the current month and five preceding months, one transaction collection at a time.
 - Calculates totals, category spending, savings rate, monthly trends, and savings profiles.
-- Fits `ml_algo`'s `LinearRegressor` on individual expense timestamps and amounts after ten expense records. Timestamps are expressed as days since the earliest expense; inference uses a point 30 days ahead.
+- Fits `ml_algo`'s `LinearRegressor` on the expense totals of completed months, using months since the oldest month as the feature, and predicts the calendar month after the current one. The current month is excluded because its total is still growing. At least three completed months with expenses are required; the six-month fetch window allows at most five.
 - Generates budget suggestions from fixed spending/income thresholds; these are rule-based.
-- Computes a confidence heuristic from record count and variance. There is no held-out evaluation or published error metric.
+- Computes a confidence heuristic from the number of months and the spread of monthly totals relative to their mean. There is no held-out evaluation or published error metric.
 
-The UI labels a predicted expense value, but the model does not aggregate monthly totals. Time ordering, aggregation, and out-of-sample evaluation are useful next steps before treating it as a monthly forecast.
+The UI labels the result as next month's predicted total, which is what the model estimates. With three to five data points it is a rough trend line. Savings deposits are recorded as expenses and are included in the totals. Out-of-sample evaluation is a useful next step before relying on it.
 
 ## Platforms and access
 

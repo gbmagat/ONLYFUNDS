@@ -14,7 +14,7 @@ Developed by **KADI Group**. Repository contributors include [Javie Alfaro](http
 - **Transaction history:** view the current month's records, sort newest/oldest, and filter income or expenses.
 - **Savings goals:** set category-based monthly targets and record contributions against the available balance.
 - **Reports and insights:** review category spending, monthly trends, savings rates, and rule-based budget suggestions using up to six months of transaction history.
-- **Experimental forecasting:** fit a linear regression model to expense timestamps and amounts after at least ten expense records are available.
+- **Experimental forecasting:** fit a linear regression model to completed months' expense totals and estimate next month's total, once at least three completed months have expenses.
 - **In-app alerts:** configurable snackbars and dialogs for spending, savings, reminders, and insights, with session-only notification history.
 
 Amounts are displayed in Philippine pesos (₱). Savings contributions are recorded as expenses and increase the monthly saved amount; no actual money is transferred.
@@ -81,7 +81,7 @@ This repository presents the current project implementation. It has no documente
 - Replace the starter counter test with Firebase-aware unit, widget, and integration tests.
 - Version and test Firestore security rules and emulator configuration.
 - Make transaction creation, balance validation, and summary updates atomic as a complete operation; combine savings deduction and saved-total updates.
-- Evaluate forecasting on time-ordered, aggregated expense data. The current model predicts an individual expense amount at a future timestamp, which is not a validated monthly expense forecast; its confidence score is a heuristic.
+- Evaluate the monthly forecast against a baseline with held-out months. It fits at most five completed months, so it is a rough trend line rather than a validated forecast; its confidence score is a heuristic.
 - Persist notification preferences/history and add scheduled device notifications if needed.
 - Add verified app screenshots and a short recorded demo.
 
