@@ -38,7 +38,8 @@ class _AccountPageState extends State<AccountPage> {
         final data = doc.data()!;
         setState(() {
           _usernameController.text = data['user_name'] ?? '';
-          _emailController.text = data['email'] ?? user.email ?? '';
+          // The sign-in email is the source of truth; the stored copy can lag.
+          _emailController.text = user.email ?? data['email'] ?? '';
           _phoneController.text = data['phone'] ?? '';
           final createdAt = data['date_created'];
           dateCreated = createdAt != null
@@ -78,31 +79,58 @@ class _AccountPageState extends State<AccountPage> {
     final user = _auth.currentUser;
     if (user == null) return;
 
+    final username = _usernameController.text.trim();
+    final newEmail = _emailController.text.trim();
+    final newPassword = _passwordController.text.trim();
+    final emailChanged = newEmail.isNotEmpty && newEmail != user.email;
+
     try {
-      // Update Firestore data
-      await _firestore.collection('users').doc(user.uid).update({
-        'user_name': _usernameController.text,
-        'phone': _phoneController.text,
-        'email': _emailController.text,
-      });
+      // Merge rather than update, so saving also works when the profile
+      // document is missing. The stored email mirrors the verified sign-in
+      // email, so a requested change is not written here.
+      await _firestore.collection('users').doc(user.uid).set({
+        'user_name': username,
+        'phone': _phoneController.text.trim(),
+        if (user.email != null) 'email': user.email,
+      }, SetOptions(merge: true));
 
       // Update display name in Firebase Auth
-      await user.updateDisplayName(_usernameController.text);
+      await user.updateDisplayName(username);
 
-      // Update email with verification
-      if (_emailController.text.trim() != user.email) {
-        await user.verifyBeforeUpdateEmail(_emailController.text.trim());
+      // Request the email change. It takes effect only after the user opens
+      // the verification link sent to the new address.
+      if (emailChanged) {
+        await user.verifyBeforeUpdateEmail(newEmail);
       }
 
       // Update password if provided
-      if (_passwordController.text.isNotEmpty) {
-        await user.updatePassword(_passwordController.text.trim());
+      if (newPassword.isNotEmpty) {
+        await user.updatePassword(newPassword);
+        _passwordController.clear();
       }
 
+      if (!mounted) return;
+      if (emailChanged) {
+        // Keep showing the email that still signs the user in.
+        _emailController.text = user.email ?? '';
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Changes saved successfully!')),
+        SnackBar(
+          content: Text(emailChanged
+              ? 'Changes saved. Open the link sent to $newEmail to confirm your new email.'
+              : 'Changes saved successfully!'),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      final message = e.code == 'requires-recent-login'
+          ? 'For security, sign out and sign in again before changing your email or password.'
+          : 'Failed to save changes: ${e.message ?? e.code}';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to save changes: $e')),
       );
