@@ -14,6 +14,24 @@ class _HistoryPageState extends State<HistoryPage> {
   String selectedFilter = "newest";
   final TransactionService _transactionService = TransactionService();
 
+  // The stream is kept in state rather than created in build(). A new stream
+  // on every rebuild made the list resubscribe and flash a spinner whenever
+  // a filter chip was tapped.
+  Stream<QuerySnapshot>? _transactionsStream;
+  int? _streamMonth;
+
+  /// Returns the transaction stream, recreating it only when the calendar
+  /// month changes, since the service reads the current month's records.
+  Stream<QuerySnapshot> _currentTransactions() {
+    final now = DateTime.now();
+    final month = now.year * 12 + now.month;
+    if (_transactionsStream == null || month != _streamMonth) {
+      _streamMonth = month;
+      _transactionsStream = _transactionService.getUserTransactions();
+    }
+    return _transactionsStream!;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,7 +87,7 @@ class _HistoryPageState extends State<HistoryPage> {
             // Transactions list
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
-                stream: _transactionService.getUserTransactions(),
+                stream: _currentTransactions(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
