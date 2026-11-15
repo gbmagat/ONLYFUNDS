@@ -142,6 +142,28 @@ class _HomePageContentState extends State<HomePageContent> {
   final TransactionService _transactionService = TransactionService();
   String? _selectedCategory;
 
+  // Streams are kept in state rather than created in build(). New streams on
+  // every rebuild made each StreamBuilder resubscribe, which flashed the
+  // recent-transactions spinner whenever the form called setState.
+  late Stream<double> _balanceStream;
+  late Stream<double> _incomeStream;
+  late Stream<double> _expenseStream;
+  late Stream<QuerySnapshot> _transactionsStream;
+  int? _streamMonth;
+
+  /// Creates the streams on first use and again when the calendar month
+  /// changes, since the service reads the current month's records.
+  void _ensureStreams() {
+    final now = DateTime.now();
+    final month = now.year * 12 + now.month;
+    if (month == _streamMonth) return;
+    _streamMonth = month;
+    _balanceStream = _transactionService.currentMonthBalance();
+    _incomeStream = _transactionService.currentMonthIncome();
+    _expenseStream = _transactionService.currentMonthExpense();
+    _transactionsStream = _transactionService.getUserTransactions();
+  }
+
   bool get _isExpenseDisabled {
     return _selectedCategory == "Income/Allowance";
   }
@@ -160,6 +182,7 @@ class _HomePageContentState extends State<HomePageContent> {
 
   @override
   Widget build(BuildContext context) {
+    _ensureStreams();
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -198,7 +221,7 @@ class _HomePageContentState extends State<HomePageContent> {
                       style: TextStyle(color: Colors.white70, fontSize: 16)),
                   SizedBox(height: 8),
                   StreamBuilder<double>(
-                    stream: TransactionService().currentMonthBalance(),
+                    stream: _balanceStream,
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
                         return const Text(
@@ -232,7 +255,7 @@ class _HomePageContentState extends State<HomePageContent> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 StreamBuilder(
-                  stream: _transactionService.currentMonthIncome(),
+                  stream: _incomeStream,
                   builder: (context, snapshot) {
                     final income = snapshot.data ?? 0.0;
                     return Text(("+") +
@@ -242,7 +265,7 @@ class _HomePageContentState extends State<HomePageContent> {
                   },
                 ),
                 StreamBuilder(
-                    stream: _transactionService.currentMonthExpense(),
+                    stream: _expenseStream,
                     builder: (context, snapshot) {
                       final expense = snapshot.data ?? 0.0;
                       return Text(("-") +
@@ -458,7 +481,7 @@ class _HomePageContentState extends State<HomePageContent> {
             const SizedBox(height: 8),
 
             StreamBuilder(
-              stream: _transactionService.getUserTransactions(),
+              stream: _transactionsStream,
               builder: (context, AsyncSnapshot snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
