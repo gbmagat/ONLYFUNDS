@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:onlyfunds_v1/amount_input.dart';
 import 'package:onlyfunds_v1/transaction_service.dart';
 import 'package:onlyfunds_v1/widgets/widgets.dart';
 import 'package:onlyfunds_v1/savings_service.dart';
@@ -285,20 +286,9 @@ Widget _displayFundBox() {
                     labelText: "Amount",
                     prefixText: "₱ ",
                   ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                          return "Amount is required";
-                        }
-                    final parsedValue = double.tryParse(value);
-                    if (parsedValue == null) {
-                          return "Enter a valid number";
-                        }
-                    if (parsedValue <= 0) {
-                          return "Amount must be greater than 0";
-                        }
-                    return null;
-                  },
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: amountInputFormatters,
+                  validator: validateAmount,
                 ),
               ),
               const SizedBox(height: 20),
@@ -405,20 +395,9 @@ Widget _displayFundBox() {
                     labelText: "Amount",
                     prefixText: "₱ ",
                   ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                          return "Amount is required";
-                        }
-                    final parsedValue = double.tryParse(value);
-                    if (parsedValue == null) {
-                          return "Enter a valid number";
-                        }
-                    if (parsedValue <= 0) {
-                          return "Amount must be greater than 0";
-                        }
-                    return null;
-                  },
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: amountInputFormatters,
+                  validator: validateAmount,
                 ),
               ),
               const SizedBox(height: 20),
@@ -466,7 +445,7 @@ Widget _displayFundBox() {
 
                       // Deduct from balance
                       await TransactionService().deductFromBalance(
-                        amount: double.tryParse(_depositAmountController.text) ?? 0.0,
+                        amount: depositAmount,
                       );
 
                       // Update saved amount

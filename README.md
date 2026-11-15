@@ -67,6 +67,7 @@ lib/
 ├── savings_service.dart       # Savings targets and saved totals
 ├── ml_analytics_service.dart  # Historical metrics and regression prototype
 ├── notification_service.dart # In-app alerts and in-memory history
+├── amount_input.dart         # Shared amount validation and input rules
 ├── pages/                    # Dashboard, history, savings, reports, accounts
 └── widgets/                  # Shared interface components
 assets/images/                # Onboarding illustrations

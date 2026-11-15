@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:onlyfunds_v1/amount_input.dart';
 import 'package:onlyfunds_v1/pages/settings_page.dart';
 import 'package:onlyfunds_v1/pages/history_page.dart';
 import 'package:onlyfunds_v1/pages/reports_page.dart';
@@ -352,20 +353,9 @@ class _HomePageContentState extends State<HomePageContent> {
                     child: TextFormField(
                       controller: _amountController,
                       decoration: const InputDecoration(labelText: "Amount"),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return "Amount is required";
-                        }
-                        final parsedValue = double.tryParse(value);
-                        if (parsedValue == null) {
-                          return "Enter a valid number";
-                        }
-                        if (parsedValue <= 0) {
-                          return "Amount must be greater than 0";
-                        }
-                        return null;
-                      },
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: amountInputFormatters,
+                      validator: validateAmount,
                     ),
                   ),
                   const SizedBox(height: 16),
