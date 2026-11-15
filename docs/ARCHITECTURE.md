@@ -44,7 +44,7 @@ Savings deposits create an expense transaction (default label `Savings`, categor
 
 Dashboard/history views subscribe to Firestore snapshots. Some summary updates run inside Firestore transactions, but record creation is not atomic as a whole: `addTransaction` validates balance and writes a record before updating its summary. Savings deductions and saved-total updates are separate calls. Concurrent writes or partial failures can leave inconsistent totals; related validation and writes should be combined in a future revision.
 
-Account deletion reauthenticates, enumerates monthly documents, deletes their nested records, then removes the profile and Auth account. Because write paths do not explicitly create monthly parent documents, enumerating only existing month documents can miss nested data. Cleanup should be verified and hardened before claiming complete deletion.
+Account deletion reauthenticates, deletes nested records month by month, then removes the profile and Auth account. Because write paths do not create monthly parent documents, a query on `monthly_records` returns nothing for them. Deletion therefore generates the month identifiers from the account's creation date to the present, plus any month documents that do exist. Records filed under a month outside that range, for example from a badly wrong device clock, would be missed. This cleanup has not been run against a live project and should be verified before claiming complete deletion.
 
 ## Analytics
 

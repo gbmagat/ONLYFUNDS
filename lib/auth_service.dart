@@ -71,38 +71,56 @@ class AuthService {
     if (user == null) throw Exception("No user logged in");
 
     final userRef = firestore.collection("users").doc(user.uid);
+    final monthsRef = userRef.collection("monthly_records");
 
-    // Get all monthly records
-    final monthlyRecords = await userRef.collection("monthly_records").get();
+    // The app writes only to the subcollections of each month, never to the
+    // month document itself. Firestore leaves such missing parents out of
+    // collection queries, so listing monthly_records finds nothing. Build the
+    // month IDs from the account's lifetime and add any that do exist.
+    final monthIds = <String>{};
+    final existingMonths = await monthsRef.get();
+    for (final doc in existingMonths.docs) {
+      monthIds.add(doc.id);
+    }
 
-    for (final monthDoc in monthlyRecords.docs) {
-      final monthRef = monthDoc.reference;
+    final now = DateTime.now();
+    final created =
+        user.metadata.creationTime ?? DateTime(now.year - 5, now.month);
+    // Pad by one month on each side to cover time zone and clock differences.
+    var cursor = DateTime(created.year, created.month - 1);
+    final end = DateTime(now.year, now.month + 1);
+    while (!cursor.isAfter(end)) {
+      monthIds.add(_monthId(cursor));
+      cursor = DateTime(cursor.year, cursor.month + 1);
+    }
 
-      // Delete all transactions
-      final transactions =
-          await monthRef.collection("transactions").get();
-      for (final doc in transactions.docs) {
-        await doc.reference.delete();
-      }
-
-      // Delete all goals
-      final goals = await monthRef.collection("goals").get();
-      for (final doc in goals.docs) {
-        await doc.reference.delete();
-      }
-
-      // Delete all summary docs
-      final summary = await monthRef.collection("summary").get();
-      for (final doc in summary.docs) {
-        await doc.reference.delete();
-      }
-
-      // Delete the month document itself
+    for (final monthId in monthIds) {
+      final monthRef = monthsRef.doc(monthId);
+      await _deleteCollection(monthRef.collection("transactions"));
+      await _deleteCollection(monthRef.collection("goals"));
+      await _deleteCollection(monthRef.collection("summary"));
       await monthRef.delete();
     }
 
     // Finally delete the user document
     await userRef.delete();
+  }
+
+  String _monthId(DateTime date) =>
+      "${date.year}-${date.month.toString().padLeft(2, '0')}";
+
+  /// Deletes every document in [collection], in batches.
+  Future<void> _deleteCollection(
+      CollectionReference<Map<String, dynamic>> collection) async {
+    const batchLimit = 400; // Firestore allows at most 500 writes per batch.
+    final snapshot = await collection.get();
+    for (var i = 0; i < snapshot.docs.length; i += batchLimit) {
+      final batch = firestore.batch();
+      for (final doc in snapshot.docs.skip(i).take(batchLimit)) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
   }
 
 
