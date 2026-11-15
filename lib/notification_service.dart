@@ -275,6 +275,7 @@ class NotificationService {
   }
 
   // GETTERS FOR SETTINGS (optional - if you want to display current settings)
+  bool get notificationsEnabled => _notificationsEnabled;
   bool get spendingAlertsEnabled => _spendingAlertsEnabled;
   bool get savingsAlertsEnabled => _savingsAlertsEnabled;
   bool get budgetAlertsEnabled => _budgetAlertsEnabled;

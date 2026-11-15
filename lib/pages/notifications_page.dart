@@ -28,17 +28,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
     _loadNotificationSettings();
   }
 
-  Future<void> _loadNotificationSettings() async {
-  // In a real app, you would load these from SharedPreferences
-  // For now, we'll use the service's default values
-  setState(() {
-    _spendingAlertsEnabled = true;
-    _savingsAlertsEnabled = true;
-    _budgetAlertsEnabled = true;
-    _reminderAlertsEnabled = true;
-    _insightAlertsEnabled = true;
-  });
-}
+  void _loadNotificationSettings() {
+    // The settings live in the NotificationService singleton for the session.
+    // Read them back so the switches match what is actually in effect.
+    // They are not saved to disk, so they still reset when the app restarts.
+    _notificationsEnabled = _notificationService.notificationsEnabled;
+    _spendingAlertsEnabled = _notificationService.spendingAlertsEnabled;
+    _savingsAlertsEnabled = _notificationService.savingsAlertsEnabled;
+    _budgetAlertsEnabled = _notificationService.budgetAlertsEnabled;
+    _reminderAlertsEnabled = _notificationService.reminderAlertsEnabled;
+    _insightAlertsEnabled = _notificationService.insightAlertsEnabled;
+  }
 
   Future<void> _testNotifications() async {
     final user = FirebaseAuth.instance.currentUser;
