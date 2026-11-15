@@ -261,6 +261,11 @@ class _ReportsPageState extends State<ReportsPage> {
     final predictedAmount = predictions['predictedAmount'];
     final confidence = predictions['confidence'] ?? 0.0;
     final trend = predictions['trend'] ?? 'stable';
+    final nextMonth = predictions['nextMonth'];
+    final monthsUsed = predictions['monthsUsed'];
+    final monthLabel = nextMonth is DateTime
+        ? DateFormat.yMMMM().format(nextMonth)
+        : 'next month';
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -280,7 +285,7 @@ class _ReportsPageState extends State<ReportsPage> {
                 Column(
                   children: [
                     Text(
-                      'Predicted Expenses: ₱${predictedAmount.toStringAsFixed(2)}',
+                      'Predicted total expenses for $monthLabel: ₱${predictedAmount.toStringAsFixed(2)}',
                       style: const TextStyle(fontSize: 16),
                     ),
                     const SizedBox(height: 8),
@@ -304,6 +309,16 @@ class _ReportsPageState extends State<ReportsPage> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                    if (monthsUsed != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Estimate from $monthsUsed completed months of expenses',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ],
                 )
               else
