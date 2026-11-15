@@ -1,4 +1,6 @@
 // services/analytics_service.dart
+import 'dart:math' show sqrt;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ml_algo/ml_algo.dart';
 import 'package:ml_dataframe/ml_dataframe.dart';
@@ -13,6 +15,9 @@ class AnalyticsService {
   static const double savingsGoalProgress = 0.5;
   static const double spendingSpike = 2.0;
   static const double incomeDrop = 0.3;
+
+  /// Completed months of expenses needed before a monthly forecast is made.
+  static const int minForecastMonths = 3;
 
   // Priority categories for special focus
   static const List<String> priorityCategories = [
@@ -47,55 +52,70 @@ class AnalyticsService {
     };
   }
 
-  /// ML: Expense Prediction using Linear Regression
+  /// ML: forecast of next calendar month's total expenses.
+  ///
+  /// Fits a linear regression to the expense totals of completed months and
+  /// extends the line one month past the current one. The current month is
+  /// left out of the fit because its total is still growing.
   Future<Map<String, dynamic>> _predictFutureExpenses(List<Map<String, dynamic>> transactions) async {
     try {
-      final expenses = transactions
-          .where((t) => _safeConvertToString(t['type']) == 'expense')
-          .toList();
+      final now = DateTime.now();
+      final currentMonthNumber = _monthNumber(now);
 
-      if (expenses.length < 10) {
+      // Expense total for each completed month, keyed by month number.
+      final totalsByMonth = <int, double>{};
+      for (final transaction in transactions) {
+        if (_safeConvertToString(transaction['type']) != 'expense') continue;
+        final monthNumber = _monthNumber(transaction['date'] as DateTime);
+        if (monthNumber >= currentMonthNumber) continue;
+        final amount = _safeConvertToDouble(transaction['amount']);
+        totalsByMonth.update(
+          monthNumber,
+          (value) => value + amount,
+          ifAbsent: () => amount,
+        );
+      }
+
+      if (totalsByMonth.length < minForecastMonths) {
         return {
           'predictedAmount': null,
           'confidence': 0.0,
-          'message': 'Need more data for accurate predictions (min 10 transactions)'
+          'message': 'Need at least $minForecastMonths full months of expenses for a monthly forecast',
         };
       }
 
-      // The feature is days since the earliest expense. Raw epoch milliseconds
-      // (around 1.7e12) are too large to fit reliably with float32 arithmetic.
-      final originMs = expenses
-          .map((t) => (t['date'] as DateTime).millisecondsSinceEpoch)
-          .reduce((a, b) => a < b ? a : b);
-      double toDays(DateTime date) =>
-          (date.millisecondsSinceEpoch - originMs) / Duration.millisecondsPerDay;
-
-      final List<List<double>> expenseData = expenses
-          .map((t) => [toDays(t['date'] as DateTime), _safeConvertToDouble(t['amount'])])
-          .toList();
+      // Oldest month first. The feature is months since the oldest month.
+      final monthNumbers = totalsByMonth.keys.toList()..sort();
+      final originMonth = monthNumbers.first;
+      final List<double> monthlyTotals =
+          monthNumbers.map((monthNumber) => totalsByMonth[monthNumber]!).toList();
+      final List<List<double>> monthlyData = [
+        for (final monthNumber in monthNumbers)
+          [(monthNumber - originMonth).toDouble(), totalsByMonth[monthNumber]!],
+      ];
 
       // headerExists must be false: by default DataFrame treats the first row
       // as column names and drops it from the data.
       final dataframe = DataFrame(
-        expenseData,
+        monthlyData,
         headerExists: false,
-        header: ['timestamp', 'amount'],
+        header: ['month', 'total'],
       );
       
       // Train linear regression model
       final model = LinearRegressor(
         dataframe,
-        'amount', // target column
+        'total', // target column
         fitIntercept: true,
       );
       
-      // Predict for next month
-      final nextMonth = DateTime.now().add(const Duration(days: 30));
+      // Predict the calendar month after the current one
+      final nextMonth = DateTime(now.year, now.month + 1);
       
       final predictionData = DataFrame(
-        [[toDays(nextMonth)]],
+        [[(currentMonthNumber + 1 - originMonth).toDouble()]],
         headerExists: false,
-        header: ['timestamp'],
+        header: ['month'],
       );
       
       final prediction = model.predict(predictionData);
@@ -105,12 +125,15 @@ class AnalyticsService {
       if (prediction.rows.isNotEmpty && prediction.rows.first.isNotEmpty) {
         predictedAmount = _safeConvertToDouble(prediction.rows.first.first);
       }
+      final hasForecast = predictedAmount.isFinite && predictedAmount > 0;
 
       return {
-        'predictedAmount': predictedAmount.isFinite && predictedAmount > 0 ? predictedAmount : null,
+        'predictedAmount': hasForecast ? predictedAmount : null,
         'nextMonth': nextMonth,
-        'confidence': _calculatePredictionConfidence(expenseData),
-        'trend': _calculateExpenseTrend(expenseData),
+        'monthsUsed': monthlyTotals.length,
+        'confidence': _calculatePredictionConfidence(monthlyTotals),
+        'trend': _calculateExpenseTrend(monthlyTotals),
+        if (!hasForecast) 'message': 'No forecast is available for the current data',
       };
     } catch (e) {
       print('ML Prediction error: $e');
@@ -120,6 +143,9 @@ class AnalyticsService {
       };
     }
   }
+
+  /// Running month number, so consecutive calendar months differ by one.
+  int _monthNumber(DateTime date) => date.year * 12 + date.month - 1;
 
   /// ML: Personalized Budget Recommendations
   Map<String, dynamic> _getPersonalizedRecommendations(
@@ -383,40 +409,34 @@ class AnalyticsService {
     return total / (months > 0 ? months : 1);
   }
 
-  /// FIXED: Proper type for expenseData
-  double _calculatePredictionConfidence(List<List<double>> expenseData) {
-    if (expenseData.length < 3) return 0.0;
-    // More data and consistent patterns = higher confidence
-    final dataPoints = expenseData.length;
-    final baseConfidence = (dataPoints / 30).clamp(0.0, 0.8); // Cap at 80% for data quantity
-    
-    // Calculate consistency (lower variance = higher confidence)
-    final amounts = expenseData.map((e) => e[1]).toList();
-    final mean = amounts.reduce((a, b) => a + b) / amounts.length;
-    final variance = amounts.map((a) => (a - mean) * (a - mean)).reduce((a, b) => a + b) / amounts.length;
-    final consistency = (1.0 - (variance / (mean > 0 ? mean : 1))).clamp(0.0, 1.0);
-    
-    return (baseConfidence * 0.6 + consistency * 0.4).clamp(0.0, 1.0);
+  /// Heuristic confidence for the monthly forecast: more months of history
+  /// and steadier monthly totals score higher. It is not a measured accuracy.
+  double _calculatePredictionConfidence(List<double> monthlyTotals) {
+    if (monthlyTotals.length < 2) return 0.0;
+
+    // History score is full once the six-month window is covered.
+    final historyScore = (monthlyTotals.length / 6).clamp(0.0, 1.0);
+
+    final mean = monthlyTotals.reduce((a, b) => a + b) / monthlyTotals.length;
+    if (mean <= 0) return 0.0;
+    final variance = monthlyTotals.map((a) => (a - mean) * (a - mean)).reduce((a, b) => a + b) / monthlyTotals.length;
+    // Spread relative to a typical month (coefficient of variation).
+    final consistency = (1.0 - sqrt(variance) / mean).clamp(0.0, 1.0);
+
+    return (historyScore * 0.6 + consistency * 0.4).clamp(0.0, 1.0);
   }
 
-  /// FIXED: Proper type for expenseData
-  String _calculateExpenseTrend(List<List<double>> expenseData) {
-    if (expenseData.length < 2) return 'stable';
-    
-    // Use last 30% of data vs previous 30% for trend calculation
-    final recentCount = (expenseData.length * 0.3).ceil();
-    final recentData = expenseData.take(recentCount);
-    final previousData = expenseData.skip(recentCount).take(recentCount);
-    
-    if (recentData.isEmpty || previousData.isEmpty) return 'stable';
-    
-    final recentAvg = recentData.fold(0.0, (sum, item) => sum + item[1]) / recentData.length;
-    final previousAvg = previousData.fold(0.0, (sum, item) => sum + item[1]) / previousData.length;
-    
-    if (previousAvg == 0) return 'stable';
-    
-    final change = (recentAvg - previousAvg) / previousAvg;
-    
+  /// Direction of the two most recent completed months, oldest first.
+  String _calculateExpenseTrend(List<double> monthlyTotals) {
+    if (monthlyTotals.length < 2) return 'stable';
+
+    final recent = monthlyTotals[monthlyTotals.length - 1];
+    final previous = monthlyTotals[monthlyTotals.length - 2];
+
+    if (previous == 0) return 'stable';
+
+    final change = (recent - previous) / previous;
+
     if (change > 0.1) return 'increasing';
     if (change < -0.1) return 'decreasing';
     return 'stable';
