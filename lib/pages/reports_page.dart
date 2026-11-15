@@ -7,9 +7,14 @@ import 'package:onlyfunds_v1/ml_analytics_service.dart';
 class ReportsPage extends StatefulWidget {
   final VoidCallback? onBack;
 
+  /// Notifies the page that it should reload, for example when its tab is
+  /// opened. The page otherwise loads only once, when it is first built.
+  final Listenable? refreshSignal;
+
   const ReportsPage({
     super.key,
     this.onBack,
+    this.refreshSignal,
   });
 
   @override
@@ -23,36 +28,63 @@ class _ReportsPageState extends State<ReportsPage> {
   Map<String, dynamic>? _insights;
   bool _isLoading = true;
   bool _hasError = false;
+  bool _loadInFlight = false;
 
   @override
   void initState() {
     super.initState();
+    widget.refreshSignal?.addListener(_onRefreshSignal);
     _loadInsights();
   }
 
-  Future<void> _loadInsights() async {
-    setState(() {
-      _isLoading = true;
-      _hasError = false;
-    });
+  @override
+  void dispose() {
+    widget.refreshSignal?.removeListener(_onRefreshSignal);
+    super.dispose();
+  }
+
+  void _onRefreshSignal() {
+    _loadInsights(silent: true);
+  }
+
+  /// Loads the insights. A [silent] reload keeps the current report on
+  /// screen while it refreshes instead of replacing it with a spinner.
+  Future<void> _loadInsights({bool silent = false}) async {
+    if (_loadInFlight) return;
+    _loadInFlight = true;
+
+    final showProgress = !silent || _insights == null;
+    if (showProgress) {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
+    }
 
     try {
       final user = _auth.currentUser;
       if (user != null) {
         final insights = await _analyticsService.getFinancialInsights(user.uid);
+        if (!mounted) return;
         setState(() {
           _insights = insights;
+          _hasError = false;
         });
       }
     } catch (e) {
       print('Error loading insights: $e');
-      setState(() {
-        _hasError = true;
-      });
+      if (mounted && showProgress) {
+        setState(() {
+          _hasError = true;
+        });
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      _loadInFlight = false;
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

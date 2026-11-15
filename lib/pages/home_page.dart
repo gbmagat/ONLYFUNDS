@@ -18,7 +18,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  static const int _reportsTabIndex = 1;
+
   int _selectedIndex = 2; // Home is center
+
+  // Bumped each time the Reports tab is opened. Every tab is built once and
+  // kept alive by the IndexedStack, so Reports would otherwise keep showing
+  // the figures it loaded at app start.
+  final ValueNotifier<int> _reportsRefresh = ValueNotifier<int>(0);
 
   late final List<Widget> _pages;
 
@@ -46,7 +53,7 @@ class _HomePageState extends State<HomePage> {
           showNotificationsIcon: true,
           onBack: () => setState(() => _selectedIndex = 2),
         ),
-        body: const ReportsPage(),
+        body: ReportsPage(refreshSignal: _reportsRefresh),
       ),
 
       // Home (black app bar, no back button)
@@ -76,11 +83,20 @@ class _HomePageState extends State<HomePage> {
     ];
   }
 
+  @override
+  void dispose() {
+    _reportsRefresh.dispose();
+    super.dispose();
+  }
+
   void _onItemTapped(int index) {
     if (index == _selectedIndex) return;
     setState(() {
       _selectedIndex = index;
     });
+    if (index == _reportsTabIndex) {
+      _reportsRefresh.value++;
+    }
   }
 
   @override
