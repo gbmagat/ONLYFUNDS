@@ -26,6 +26,39 @@ class _SavingsPageState extends State<SavingsPage> {
 
   String? _selectedCategory;
 
+  static const List<String> _fundNames = [
+    "Emergency Fund",
+    "Travel Fund",
+    "School Fund",
+    "Miscellaneous Fund",
+  ];
+
+  // Streams are kept in state rather than created in build(), so a rebuild
+  // does not make every StreamBuilder drop and reopen its Firestore listener.
+  // Each StreamBuilder gets its own stream instance.
+  late Stream<double> _savedTextStream;
+  late Stream<double> _targetTextStream;
+  late Stream<double> _savedProgressStream;
+  late Stream<double> _targetProgressStream;
+  late Map<String, Stream<double>> _fundStreams;
+  int? _streamMonth;
+
+  /// Creates the streams on first use and again when the calendar month
+  /// changes, since the service reads the current month's records.
+  void _ensureStreams() {
+    final now = DateTime.now();
+    final month = now.year * 12 + now.month;
+    if (month == _streamMonth) return;
+    _streamMonth = month;
+    _savedTextStream = _savingsService.currentAmountSaved();
+    _targetTextStream = _savingsService.currentTargetSavings();
+    _savedProgressStream = _savingsService.currentAmountSaved();
+    _targetProgressStream = _savingsService.currentTargetSavings();
+    _fundStreams = {
+      for (final fund in _fundNames) fund: _savingsService.savedAmount(fund),
+    };
+  }
+
   // ------------------- UI Widgets -------------------
 
   Widget _displaySavings() {
@@ -42,7 +75,7 @@ class _SavingsPageState extends State<SavingsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     StreamBuilder<double>(
-                      stream: SavingsService().currentAmountSaved(), 
+                      stream: _savedTextStream,
                       builder: (context, snapshot) { 
                         if (!snapshot.hasData) {
                           return const Text(
@@ -67,7 +100,7 @@ class _SavingsPageState extends State<SavingsPage> {
                     ),
                     SizedBox(height: 4),
                     StreamBuilder<double>(
-                      stream: SavingsService().currentTargetSavings(), 
+                      stream: _targetTextStream,
                       builder: (context, snapshot) { 
                         if (!snapshot.hasData) {
                           return const Text(
@@ -113,12 +146,12 @@ class _SavingsPageState extends State<SavingsPage> {
             ),
             const SizedBox(height: 16),
             StreamBuilder<double>(
-              stream: SavingsService().currentAmountSaved(),
+              stream: _savedProgressStream,
               builder: (context, snapshotSaved) {
                 double saved = snapshotSaved.data ?? 0;
 
                 return StreamBuilder<double>(
-                  stream: SavingsService().currentTargetSavings(),
+                  stream: _targetProgressStream,
                   builder: (context, snapshotTarget) {
                     double target = snapshotTarget.data ?? 0; 
                     double progress = 0.0;
@@ -197,7 +230,7 @@ class _SavingsPageState extends State<SavingsPage> {
 
   Widget _fundBoxDynamic(String fundName, Color color) {
   return StreamBuilder<double>(
-    stream: _savingsService.savedAmount(fundName),
+    stream: _fundStreams[fundName],
     builder: (context, snapshot) {
       final amount = snapshot.data ?? 0.0;
       return _fundBox(
@@ -476,6 +509,7 @@ Widget _displayFundBox() {
 
   @override
   Widget build(BuildContext context) {
+    _ensureStreams();
     return ScaffoldMessenger(
       key: _scaffoldMessengerKey,
       child: Scaffold(
