@@ -182,6 +182,18 @@ class SavingsService {
 
   Stream<double> currentAmountSaved() => _getSummaryField("amountSaved");
   Stream<double> currentTargetSavings() => _getSummaryField("targetSavings");
+
+  /// Streams how much is left to reach this month's savings target: the
+  /// combined goal amount minus what has already been saved.
+  Stream<double> remainingToTarget() {
+    return getSummary().map((doc) {
+      if (!doc.exists) return 0.0;
+      final data = doc.data() as Map<String, dynamic>;
+      final double target = (data["targetSavings"] ?? 0).toDouble();
+      final double saved = (data["amountSaved"] ?? 0).toDouble();
+      return target - saved;
+    });
+  }
   
   Stream<double> _getSummaryField(String field) {
     final user = _auth.currentUser;

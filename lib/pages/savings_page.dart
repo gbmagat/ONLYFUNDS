@@ -128,19 +128,7 @@ class _SavingsPageState extends State<SavingsPage> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.add_circle_rounded, color: Colors.green, size: 32),
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true, // allows specifying height
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                      ),
-                      builder: (context) => FractionallySizedBox(
-                        heightFactor: 0.7, // take 75% of screen height
-                        child: _depositSavingsForm()
-                      ),
-                    );
-                  },
+                  onPressed: _openDepositSheet,
                 ),
               ],
             ),
@@ -355,7 +343,27 @@ Widget _displayFundBox() {
     );
   }
 
-  Widget _depositSavingsForm() {
+  /// Opens the deposit sheet. Its streams are created here, once per
+  /// opening, so rebuilding the sheet (for example when the keyboard opens)
+  /// neither reopens the Firestore listeners nor refetches the figures.
+  void _openDepositSheet() {
+    final balanceStream = TransactionService().currentMonthBalance();
+    final remainingStream = _savingsService.remainingToTarget();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // allows specifying height
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => FractionallySizedBox(
+        heightFactor: 0.7, // take 70% of screen height
+        child: _depositSavingsForm(balanceStream, remainingStream),
+      ),
+    );
+  }
+
+  Widget _depositSavingsForm(
+      Stream<double> balanceStream, Stream<double> remainingStream) {
   return Scaffold(
     backgroundColor: Colors.transparent,
     body: Card(
@@ -379,7 +387,7 @@ Widget _displayFundBox() {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: StreamBuilder<double>(
-                  stream: TransactionService().currentMonthBalance(),
+                  stream: balanceStream,
                   builder: (context, snapshot) {
                     final balance = snapshot.data ?? 0.0;
                     return Text(
@@ -401,11 +409,9 @@ Widget _displayFundBox() {
               const SizedBox(height: 4),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: FutureBuilder<double>(
-                  future: _savingsService.totalTarget().then((totalTarget) async {
-                    final totalSaved = await _savingsService.totalSaved();
-                    return totalTarget - totalSaved;
-                  }),
+                // Streamed, so the figure updates as soon as a deposit lands.
+                child: StreamBuilder<double>(
+                  stream: remainingStream,
                   builder: (context, snapshot) {
                     final remaining = snapshot.data ?? 0.0;
                     return Text(
@@ -488,8 +494,6 @@ Widget _displayFundBox() {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Deposit successful!")),
                       );
-
-                      setState(() {}); // refresh remaining amount
                     },
                   );
                 }),
