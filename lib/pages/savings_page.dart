@@ -279,7 +279,7 @@ Widget _displayFundBox() {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: DropdownButtonFormField<String>(
-                  value: _selectedCategory,
+                  initialValue: _selectedCategory,
                   decoration: const InputDecoration(labelText: "Category"),
                   items: const [
                     DropdownMenuItem(
