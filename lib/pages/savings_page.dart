@@ -320,10 +320,18 @@ Widget _displayFundBox() {
                   onPressed: () async {
                     if (!_goalFormKey.currentState!.validate()) return;
 
-                    await _savingsService.addSavingsGoal(
-                      category: _selectedCategory ?? "Uncategorized",
-                      amount: double.parse(_goalAmountController.text.trim()),
-                    );
+                    try {
+                      await _savingsService.addSavingsGoal(
+                        category: _selectedCategory ?? "Uncategorized",
+                        amount: double.parse(_goalAmountController.text.trim()),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+                      _scaffoldMessengerKey.currentState?.showSnackBar(
+                        SnackBar(content: Text("Could not save the goal: $e")),
+                      );
+                      return;
+                    }
                     if (!mounted) return;
 
                     _scaffoldMessengerKey.currentState!.showSnackBar(
@@ -453,50 +461,66 @@ Widget _displayFundBox() {
                           double.tryParse(_depositAmountController.text.trim());
                       if (depositAmount == null) return;
 
-                      // Get current balance
-                      final balanceSnapshot =
-                          await TransactionService().currentMonthBalance().first;
-                      final availableBalance = balanceSnapshot;
-                      // This context belongs to the sheet, which may have closed.
-                      if (!context.mounted) return;
+                      try {
+                        // Get current balance
+                        final availableBalance =
+                            await TransactionService().currentMonthBalance().first;
+                        // This context belongs to the sheet, which may have closed.
+                        if (!context.mounted) return;
 
-                      if (depositAmount > availableBalance) {
+                        if (depositAmount > availableBalance) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  "Deposit exceeds available balance (₱${availableBalance.toStringAsFixed(2)})"),
+                            ),
+                          );
+                          return;
+                        }
+
+                        // Get total target and already saved amount
+                        final totalTarget = await _savingsService.totalTarget();
+                        final totalSaved = await _savingsService.totalSaved();
+                        final remaining = totalTarget - totalSaved;
+                        if (!context.mounted) return;
+
+                        if (depositAmount > remaining) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  "Deposit exceeds remaining goal (₱${remaining.toStringAsFixed(2)})"),
+                            ),
+                          );
+                          return;
+                        }
+
+                        // Deduct from balance
+                        await TransactionService().deductFromBalance(
+                          amount: depositAmount,
+                        );
+                      } catch (e) {
+                        if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                                "Deposit exceeds available balance (₱${availableBalance.toStringAsFixed(2)})"),
-                          ),
+                          SnackBar(content: Text("Deposit failed: $e")),
                         );
                         return;
                       }
 
-                      // Get total target and already saved amount
-                      final totalTarget = await _savingsService.totalTarget();
-                      final totalSaved = await _savingsService.totalSaved();
-                      final remaining = totalTarget - totalSaved;
-                      if (!context.mounted) return;
-
-                      if (depositAmount > remaining) {
+                      // Deliberately no mounted check before this write: the
+                      // balance has already been deducted, so stopping here
+                      // would leave the saving unrecorded.
+                      try {
+                        await _savingsService.updateAmountSaved(depositAmount);
+                      } catch (e) {
+                        if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                                "Deposit exceeds remaining goal (₱${remaining.toStringAsFixed(2)})"),
+                                "The amount was deducted from your balance, but the saved total did not update: $e"),
                           ),
                         );
                         return;
                       }
-
-                      // Deliberately no mounted checks between these two
-                      // writes: stopping there would deduct the balance
-                      // without recording the saving.
-
-                      // Deduct from balance
-                      await TransactionService().deductFromBalance(
-                        amount: depositAmount,
-                      );
-
-                      // Update saved amount
-                      await _savingsService.updateAmountSaved(depositAmount);
 
                       if (mounted) _depositAmountController.clear();
                       if (!context.mounted) return;

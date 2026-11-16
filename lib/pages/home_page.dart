@@ -394,19 +394,27 @@ class _HomePageContentState extends State<HomePageContent> {
                             onPressed: _isIncomeDisabled ? null : () async {
                               if (!_formKey.currentState!.validate()) return;
 
-                              await _transactionService.addTransaction(
-                                label: _labelController.text.trim(),
-                                category:
-                                    _selectedCategory ?? "Uncategorized",
-                                description: _descriptionController.text
-                                        .trim()
-                                        .isEmpty
-                                    ? null
-                                    : _descriptionController.text.trim(),
-                                amount: double.parse(
-                                    _amountController.text.trim()),
-                                type: "income",
-                              );
+                              try {
+                                await _transactionService.addTransaction(
+                                  label: _labelController.text.trim(),
+                                  category:
+                                      _selectedCategory ?? "Uncategorized",
+                                  description: _descriptionController.text
+                                          .trim()
+                                          .isEmpty
+                                      ? null
+                                      : _descriptionController.text.trim(),
+                                  amount: double.parse(
+                                      _amountController.text.trim()),
+                                  type: "income",
+                                );
+                              } catch (e) {
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(e.toString())),
+                                );
+                                return;
+                              }
                               if (!mounted) return;
 
                               ScaffoldMessenger.of(context).showSnackBar(
