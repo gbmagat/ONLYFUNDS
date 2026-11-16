@@ -4,7 +4,6 @@ import 'dart:math' show sqrt;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ml_algo/ml_algo.dart';
 import 'package:ml_dataframe/ml_dataframe.dart';
-import 'package:intl/intl.dart';
 
 class AnalyticsService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

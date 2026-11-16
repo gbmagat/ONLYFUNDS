@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:onlyfunds_v1/ml_analytics_service.dart';
 import 'package:onlyfunds_v1/notification_service.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -12,7 +11,6 @@ class NotificationsPage extends StatefulWidget {
 
 class _NotificationsPageState extends State<NotificationsPage> {
   bool _notificationsEnabled = true;
-  final AnalyticsService _analyticsService = AnalyticsService();
   final NotificationService _notificationService = NotificationService();
   
   // Notification categories
