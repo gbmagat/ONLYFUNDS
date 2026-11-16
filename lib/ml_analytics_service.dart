@@ -2,11 +2,14 @@
 import 'dart:math' show sqrt;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:ml_algo/ml_algo.dart';
 import 'package:ml_dataframe/ml_dataframe.dart';
 
 class AnalyticsService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Resolved on first use, so the calculations below can run in tests
+  // without initializing Firebase.
+  late final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
   // Alert Thresholds
   static const double budgetWarning = 0.75;
@@ -30,15 +33,29 @@ class AnalyticsService {
   /// Get comprehensive financial insights for reports
   Future<Map<String, dynamic>> getFinancialInsights(String userId) async {
     final transactions = await _getHistoricalTransactions(userId, months: 6);
-    
+    return computeInsights(transactions);
+  }
+
+  /// Calculates the report insights from already-fetched [transactions].
+  ///
+  /// Each transaction is a map with `type` ("income" or "expense"),
+  /// `amount`, `category`, and `date` (a [DateTime]), as produced by the
+  /// Firestore fetch. Kept apart from that fetch so it can be tested without
+  /// Firebase. [now] sets the current date and defaults to the real one.
+  @visibleForTesting
+  Future<Map<String, dynamic>> computeInsights(
+    List<Map<String, dynamic>> transactions, {
+    DateTime? now,
+  }) async {
     if (transactions.isEmpty) {
       return _getEmptyInsights();
     }
+    final today = now ?? DateTime.now();
 
     final basicInsights = _getBasicFinancialMetrics(transactions);
-    final predictions = await _predictFutureExpenses(transactions);
+    final predictions = await _predictFutureExpenses(transactions, today);
     final recommendations = _getPersonalizedRecommendations(transactions, basicInsights);
-    final alerts = _generateRealTimeAlerts(transactions);
+    final alerts = _generateRealTimeAlerts(transactions, today);
 
     return {
       'basicMetrics': basicInsights,
@@ -56,9 +73,9 @@ class AnalyticsService {
   /// Fits a linear regression to the expense totals of completed months and
   /// extends the line one month past the current one. The current month is
   /// left out of the fit because its total is still growing.
-  Future<Map<String, dynamic>> _predictFutureExpenses(List<Map<String, dynamic>> transactions) async {
+  Future<Map<String, dynamic>> _predictFutureExpenses(
+      List<Map<String, dynamic>> transactions, DateTime now) async {
     try {
-      final now = DateTime.now();
       final currentMonthNumber = _monthNumber(now);
 
       // Expense total for each completed month, keyed by month number.
@@ -209,9 +226,9 @@ class AnalyticsService {
   /// Every alert compares the current calendar month against the monthly
   /// average of the earlier months in the fetched history, so both sides of
   /// each comparison cover the same length of time.
-  List<Map<String, dynamic>> _generateRealTimeAlerts(List<Map<String, dynamic>> transactions) {
+  List<Map<String, dynamic>> _generateRealTimeAlerts(
+      List<Map<String, dynamic>> transactions, DateTime currentDate) {
     final alerts = <Map<String, dynamic>>[];
-    final currentDate = DateTime.now();
     final daysInMonth = DateTime(currentDate.year, currentDate.month + 1, 0).day;
     final monthProgress = currentDate.day / daysInMonth;
     final currentMonthKey = _monthKey(currentDate);
