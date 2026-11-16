@@ -17,6 +17,13 @@ class _SignInPageState extends State<SignInPage> {
   final passwordController = TextEditingController();
   bool isLoading = false;
 
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
   void _signIn() async {
     setState(() => isLoading = true);
     try {

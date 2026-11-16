@@ -54,73 +54,14 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  void _confirmDeleteAccount() {
-  final passwordController = TextEditingController();
-  String? errorText; // store error message
-
-  showDialog(
-    context: context,
-    builder: (ctx) {
-      return StatefulBuilder( // allows updating UI inside dialog
-        builder: (ctx, setState) => AlertDialog(
-          title: const Text(
-            "Delete Account",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("Enter your password to confirm"),
-              const SizedBox(height: 12),
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  hintText: "Password",
-                  errorText: errorText, //shows red text below if not null
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text(
-                "Cancel",
-                style: TextStyle(color: Colors.black),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () {
-                final password = passwordController.text.trim();
-
-                //Validate password field
-                if (password.isEmpty) {
-                  setState(() {
-                    errorText = "Password is required";
-                  });
-                  return;
-                }
-
-                Navigator.pop(ctx); // close dialog if password valid
-                _deleteAccount(
-                  password
-                );
-              },
-              child: const Text(
-                "Delete",
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
+  Future<void> _confirmDeleteAccount() async {
+    final password = await showDialog<String>(
+      context: context,
+      builder: (_) => const _DeleteAccountDialog(),
+    );
+    if (password == null || !mounted) return;
+    _deleteAccount(password);
+  }
 
   Widget _settingsItem(IconData icon, String title, {VoidCallback? onTap}) {
     return Container(
@@ -220,6 +161,79 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Asks for the account password before deletion. Pops with the entered
+/// password, or with null when cancelled. It owns its text controller, so
+/// the controller is disposed with the dialog instead of leaking.
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final TextEditingController _passwordController = TextEditingController();
+  String? _errorText;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final password = _passwordController.text.trim();
+    if (password.isEmpty) {
+      setState(() => _errorText = "Password is required");
+      return;
+    }
+    Navigator.pop(context, password);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(
+        "Delete Account",
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Enter your password to confirm"),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _passwordController,
+            obscureText: true,
+            decoration: InputDecoration(
+              hintText: "Password",
+              errorText: _errorText, // shows red text below if not null
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text(
+            "Cancel",
+            style: TextStyle(color: Colors.black),
+          ),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: _submit,
+          child: const Text(
+            "Delete",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ],
     );
   }
 }

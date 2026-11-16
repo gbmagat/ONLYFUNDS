@@ -27,6 +27,15 @@ class _AccountPageState extends State<AccountPage> {
     _loadUserData();
   }
 
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadUserData() async {
   final user = _auth.currentUser;
 

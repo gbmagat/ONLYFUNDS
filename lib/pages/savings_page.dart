@@ -59,6 +59,13 @@ class _SavingsPageState extends State<SavingsPage> {
     };
   }
 
+  @override
+  void dispose() {
+    _goalAmountController.dispose();
+    _depositAmountController.dispose();
+    super.dispose();
+  }
+
   // ------------------- UI Widgets -------------------
 
   Widget _displaySavings() {
