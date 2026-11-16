@@ -54,6 +54,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
     // Wait a bit between notifications
     await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
 
     // Test savings reminder
     _notificationService.showSavingsReminder(
@@ -64,6 +65,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
 
     await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
 
     // Test budget warning
     _notificationService.showBudgetWarning(
@@ -74,11 +76,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
 
     await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
 
     // Test daily reminder
     _notificationService.showDailyReminder(context);
 
     await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
 
     // Test weekly insight
     _notificationService.showWeeklyInsight(
@@ -88,6 +92,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
 
     await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
 
     // Test income vs expense
     _notificationService.showIncomeExpenseAlert(

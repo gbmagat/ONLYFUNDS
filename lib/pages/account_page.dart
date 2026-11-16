@@ -33,6 +33,7 @@ class _AccountPageState extends State<AccountPage> {
   if (user != null) {
     try {
       final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (!mounted) return;
 
       if (doc.exists) {
         final data = doc.data()!;
@@ -61,6 +62,7 @@ class _AccountPageState extends State<AccountPage> {
     } catch (e) {
       // Handle permission or network errors gracefully
       debugPrint('Error loading user data: $e');
+      if (!mounted) return;
       setState(() {
         _emailController.text = user.email ?? '';
         _usernameController.text = user.displayName ?? '';

@@ -324,6 +324,7 @@ Widget _displayFundBox() {
                       category: _selectedCategory ?? "Uncategorized",
                       amount: double.parse(_goalAmountController.text.trim()),
                     );
+                    if (!mounted) return;
 
                     _scaffoldMessengerKey.currentState!.showSnackBar(
                       const SnackBar(content: Text("Savings Goal Created!")),
@@ -456,6 +457,8 @@ Widget _displayFundBox() {
                       final balanceSnapshot =
                           await TransactionService().currentMonthBalance().first;
                       final availableBalance = balanceSnapshot;
+                      // This context belongs to the sheet, which may have closed.
+                      if (!context.mounted) return;
 
                       if (depositAmount > availableBalance) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -471,6 +474,7 @@ Widget _displayFundBox() {
                       final totalTarget = await _savingsService.totalTarget();
                       final totalSaved = await _savingsService.totalSaved();
                       final remaining = totalTarget - totalSaved;
+                      if (!context.mounted) return;
 
                       if (depositAmount > remaining) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -482,6 +486,10 @@ Widget _displayFundBox() {
                         return;
                       }
 
+                      // Deliberately no mounted checks between these two
+                      // writes: stopping there would deduct the balance
+                      // without recording the saving.
+
                       // Deduct from balance
                       await TransactionService().deductFromBalance(
                         amount: depositAmount,
@@ -490,7 +498,8 @@ Widget _displayFundBox() {
                       // Update saved amount
                       await _savingsService.updateAmountSaved(depositAmount);
 
-                      _depositAmountController.clear();
+                      if (mounted) _depositAmountController.clear();
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Deposit successful!")),
                       );

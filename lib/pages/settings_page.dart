@@ -18,13 +18,15 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() => isLoading = true);
     try {
       await authService.value.signOut();
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/signin');
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: ${e.message}")),
       );
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -32,20 +34,23 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() => isLoading = true);
     try {
       await authService.value.deleteAccount(password: password);
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/signin');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Account deleted successfully.")),
       );
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: ${e.message}")),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 

@@ -115,9 +115,10 @@ class NotificationService {
         action: SnackBarAction(
           label: 'Dismiss',
           textColor: Colors.white,
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
+          // SnackBarAction hides the snack bar itself when pressed. Looking
+          // the messenger up again through the caller's context would throw
+          // if that page had closed while the snack bar was showing.
+          onPressed: () {},
         ),
       ),
     );
