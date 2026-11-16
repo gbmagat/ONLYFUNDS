@@ -72,13 +72,14 @@ lib/
 └── widgets/                  # Shared interface components
 assets/images/                # Onboarding illustrations
 docs/                         # Setup, architecture, and demo notes
+test/                         # Unit and widget tests that run without Firebase
 ```
 
 ## Status and next steps
 
 This repository presents the current project implementation. It has no documented production release or model accuracy benchmark. Areas for further work include:
 
-- Replace the starter counter test with Firebase-aware unit, widget, and integration tests.
+- Add Firebase emulator-backed integration tests for sign-in, transactions, and savings. The current unit and widget tests run without Firebase.
 - Version and test Firestore security rules and emulator configuration.
 - Make transaction creation, balance validation, and summary updates atomic as a complete operation; combine savings deduction and saved-total updates.
 - Evaluate the monthly forecast against a baseline with held-out months. It fits at most five completed months, so it is a rough trend line rather than a validated forecast; its confidence score is a heuristic.

@@ -48,4 +48,4 @@ Android is the simplest starting point on Windows. iOS requires macOS, Xcode, an
 | Prediction unavailable | Expenses in at least three completed calendar months are required; the current month does not count. Fitting errors or non-positive results can also prevent a prediction. |
 | Notification settings reset | Preferences/history are held in memory; persistent storage is not implemented. |
 
-See [development and validation](../CONTRIBUTING.md) for checks. The starter counter test does not validate OnlyFunds.
+See [development and validation](../CONTRIBUTING.md) for checks. The unit and widget tests run without Firebase and do not cover the Firebase-backed pages.

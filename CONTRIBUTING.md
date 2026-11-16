@@ -11,7 +11,7 @@ flutter test
 git diff --check
 ```
 
-These commands are not a claim that every check currently passes. `test/widget_test.dart` contains the generated counter test, while the app uses Firebase. Replace it with meaningful tests and Firebase doubles or emulator-backed integration tests before relying on it as a quality gate.
+These commands are not a claim that every check currently passes. The tests in `test/` cover amount validation, the shared widgets, and the report calculations, including the monthly forecast and alerts, without Firebase. Pages and services that call Firebase are not tested yet; add Firebase doubles or emulator-backed integration tests before relying on the suite as a quality gate.
 
 For changes to records or totals, follow [the demo walkthrough](docs/DEMO.md). Also check empty accounts, invalid amounts, insufficient balance, sign-out/sign-in, multiple users, and a new month. Verify Firestore ownership rules independently of UI behavior.
 
