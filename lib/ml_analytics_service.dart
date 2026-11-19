@@ -30,6 +30,12 @@ class AnalyticsService {
     "Shopping/Other"
   ];
 
+  /// Expense categories that move money into savings instead of spending it.
+  /// Deposits made on the Savings page are stored as expenses in the "Funds"
+  /// category, and the dashboard offers a "Savings" category for money set
+  /// aside. Reports count both as saved, not spent.
+  static const Set<String> savingsCategories = {'Funds', 'Savings'};
+
   /// Get comprehensive financial insights for reports
   Future<Map<String, dynamic>> getFinancialInsights(String userId) async {
     final transactions = await _getHistoricalTransactions(userId, months: 6);
@@ -313,6 +319,21 @@ class AnalyticsService {
         .fold(0.0, (sum, item) => sum + _safeConvertToDouble(item['amount']));
   }
 
+  /// Whether [transaction] moves money into savings; see [savingsCategories].
+  bool _isSavingsTransfer(Map<String, dynamic> transaction) =>
+      _safeConvertToString(transaction['type']) == 'expense' &&
+      savingsCategories.contains(_safeConvertToString(transaction['category']));
+
+  /// Whether [transaction] is spending: an expense that is not a savings
+  /// transfer.
+  bool _isSpending(Map<String, dynamic> transaction) =>
+      _safeConvertToString(transaction['type']) == 'expense' &&
+      !_isSavingsTransfer(transaction);
+
+  double _sumAmounts(Iterable<Map<String, dynamic>> transactions) =>
+      transactions.fold(
+          0.0, (sum, item) => sum + _safeConvertToDouble(item['amount']));
+
   /// FIXED: Proper type handling for Firestore data
   Future<List<Map<String, dynamic>>> _getHistoricalTransactions(String userId, {int months = 6}) async {
     final List<Map<String, dynamic>> allTransactions = [];
@@ -374,11 +395,15 @@ class AnalyticsService {
 
   /// FIXED: Safe map access in basic metrics
   Map<String, dynamic> _getBasicFinancialMetrics(List<Map<String, dynamic>> transactions) {
-    final expenses = transactions.where((t) => _safeConvertToString(t['type']) == 'expense');
-    final income = transactions.where((t) => _safeConvertToString(t['type']) == 'income');
+    // Money moved into savings is not spending: it is left out of expenses,
+    // so it counts toward savings and the savings rate.
+    final spending = transactions.where(_isSpending).toList();
+    final income = transactions
+        .where((t) => _safeConvertToString(t['type']) == 'income')
+        .toList();
 
-    final totalExpenses = expenses.fold(0.0, (sum, item) => sum + _safeConvertToDouble(item['amount']));
-    final totalIncome = income.fold(0.0, (sum, item) => sum + _safeConvertToDouble(item['amount']));
+    final totalExpenses = _sumAmounts(spending);
+    final totalIncome = _sumAmounts(income);
     final savings = totalIncome - totalExpenses;
     final savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0;
 
@@ -386,10 +411,11 @@ class AnalyticsService {
       'totalExpenses': totalExpenses,
       'totalIncome': totalIncome,
       'savings': savings,
+      'savingsTransfers': _sumAmounts(transactions.where(_isSavingsTransfer)),
       'savingsRate': savingsRate,
       'categorySpending': _getCategorySpending(transactions),
-      'averageMonthlyExpense': _calculateAverageMonthly(expenses.toList()),
-      'averageMonthlyIncome': _calculateAverageMonthly(income.toList()),
+      'averageMonthlyExpense': _calculateAverageMonthly(spending),
+      'averageMonthlyIncome': _calculateAverageMonthly(income),
       'transactionCount': transactions.length,
     };
   }
@@ -397,7 +423,8 @@ class AnalyticsService {
   /// FIXED: Safe category spending calculation
   Map<String, double> _getCategorySpending(List<Map<String, dynamic>> transactions) {
     final Map<String, double> categoryMap = {};
-    final expenses = transactions.where((t) => _safeConvertToString(t['type']) == 'expense');
+    // Savings transfers are not spending, so they are left out.
+    final expenses = transactions.where(_isSpending);
     
     for (final expense in expenses) {
       final category = _safeConvertToString(expense['category']);
@@ -466,7 +493,7 @@ class AnalyticsService {
       final date = transaction['date'] as DateTime;
       final monthKey = "${date.year}-${date.month.toString().padLeft(2, '0')}";
       
-      if (_safeConvertToString(transaction['type']) == 'expense') {
+      if (_isSpending(transaction)) {
         final amount = _safeConvertToDouble(transaction['amount']);
         monthlyData.update(
           monthKey,
@@ -528,6 +555,7 @@ class AnalyticsService {
         'totalExpenses': 0.0,
         'totalIncome': 0.0,
         'savings': 0.0,
+        'savingsTransfers': 0.0,
         'savingsRate': 0.0,
         'categorySpending': <String, double>{},
         'averageMonthlyExpense': 0.0,

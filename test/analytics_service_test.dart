@@ -148,6 +148,39 @@ void main() {
     });
   });
 
+  group('savings transfers', () {
+    test('count as saved, not spent, in the summary', () async {
+      final insights = await service.computeInsights([
+        _income(10000, DateTime(2026, 6, 1)),
+        _tx('expense', 500, DateTime(2026, 6, 2)),
+        _tx('expense', 200, DateTime(2026, 6, 3), category: 'Transportation'),
+        // A deposit made on the Savings page.
+        _tx('expense', 1000, DateTime(2026, 6, 4), category: 'Funds'),
+      ], now: now);
+      final metrics = insights['basicMetrics'] as Map<String, dynamic>;
+      final breakdown = insights['categoryBreakdown'] as Map<String, double>;
+
+      expect(metrics['totalExpenses'], closeTo(700, 0.001));
+      expect(metrics['savings'], closeTo(9300, 0.001));
+      expect(metrics['savingsTransfers'], closeTo(1000, 0.001));
+      expect(metrics['savingsRate'], closeTo(93, 0.001));
+      expect(breakdown.keys, isNot(contains('Funds')));
+    });
+
+    test('include expenses recorded in the Savings category', () async {
+      final insights = await service.computeInsights([
+        _income(5000, DateTime(2026, 6, 1)),
+        _tx('expense', 1000, DateTime(2026, 6, 2)),
+        _tx('expense', 500, DateTime(2026, 6, 3), category: 'Savings'),
+      ], now: now);
+      final metrics = insights['basicMetrics'] as Map<String, dynamic>;
+
+      expect(metrics['totalExpenses'], closeTo(1000, 0.001));
+      expect(metrics['savings'], closeTo(4000, 0.001));
+      expect(metrics['savingsTransfers'], closeTo(500, 0.001));
+    });
+  });
+
   test('returns the empty state when there are no transactions', () async {
     final insights = await service.computeInsights([], now: now);
     final predictions = insights['predictions'] as Map<String, dynamic>;
