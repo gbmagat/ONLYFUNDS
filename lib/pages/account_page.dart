@@ -117,10 +117,12 @@ class _AccountPageState extends State<AccountPage> {
       // Update password if provided
       if (newPassword.isNotEmpty) {
         await user.updatePassword(newPassword);
-        _passwordController.clear();
       }
 
+      // The page may have closed during the awaits above, and its controllers
+      // are disposed with it, so touch them only while it is still mounted.
       if (!mounted) return;
+      if (newPassword.isNotEmpty) _passwordController.clear();
       if (emailChanged) {
         // Keep showing the email that still signs the user in.
         _emailController.text = user.email ?? '';
