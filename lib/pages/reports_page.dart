@@ -212,6 +212,7 @@ class _ReportsPageState extends State<ReportsPage> {
     final totalExpenses = metrics['totalExpenses'] ?? 0.0;
     final savings = metrics['savings'] ?? 0.0;
     final savingsRate = metrics['savingsRate'] ?? 0.0;
+    final savingsTransfers = metrics['savingsTransfers'] ?? 0.0;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -250,6 +251,15 @@ class _ReportsPageState extends State<ReportsPage> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              // The dashboard's expense total includes savings deposits, but
+              // these figures do not, so say why the two differ.
+              if (savingsTransfers > 0) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Includes ₱${savingsTransfers.toStringAsFixed(2)} moved into savings, counted as saved rather than spent.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
             ],
           ),
         ),
