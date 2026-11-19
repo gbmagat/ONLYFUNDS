@@ -10,7 +10,7 @@ Use your own Firebase project and a disposable account after [setup](SETUP.md). 
 6. In Savings, add a **₱2,000** target in an available category and deposit **₱1,000** toward the monthly saved total.
 7. Check expenses **₱1,700**, balance **₱8,300**, target savings **₱2,000**, and amount saved **₱1,000**. The deposit records an allocation; it is not a bank transfer.
 8. Attempt an expense above **₱8,300** and check the insufficient-balance message.
-9. Open Reports for category spending, savings analysis, and recommendations. An account with fewer than three completed months of expenses should produce the insufficient-data prediction state.
+9. Open Reports for category spending, savings analysis, and recommendations. The **₱1,000** deposit counts as savings, not spending: expenses **₱700**, savings **₱9,300**, a 93% savings rate, and no Funds entry in the category breakdown. An account with fewer than three completed months of expenses should produce the insufficient-data prediction state.
 10. Sign out and back in to check that the same account's records remain available.
 
 Dashboard and history are scoped to the current month. A fresh month uses separate records.

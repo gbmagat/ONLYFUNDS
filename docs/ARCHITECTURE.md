@@ -38,7 +38,7 @@ users/{uid}
 | Summary `targetSavings` | Combined monthly category targets. |
 | Summary `amountSaved` | Combined recorded savings contributions for the month. |
 
-Savings deposits create an expense transaction (default label `Savings`, category `Funds`) and separately increase `amountSaved`. Reports include these contributions in expense aggregates. There is no bank integration or actual movement of funds.
+Savings deposits create an expense transaction (default label `Savings`, category `Funds`) and separately increase `amountSaved`. The dashboard's balance and expense totals include these deposits. Reports instead treat them, and expenses recorded in the dashboard's `Savings` category, as transfers into savings: they are left out of expenses, the category breakdown, the savings alert, and the forecast, and they count toward savings and the savings rate. There is no bank integration or actual movement of funds.
 
 ## Consistency and account lifecycle
 
@@ -49,12 +49,12 @@ Account deletion reauthenticates, deletes nested records month by month, then re
 ## Analytics
 
 - Fetches the current month and five preceding months, one transaction collection at a time.
-- Calculates totals, category spending, savings rate, monthly trends, and savings profiles.
-- Fits `ml_algo`'s `LinearRegressor` on the expense totals of completed months, using months since the oldest month as the feature, and predicts the calendar month after the current one. The current month is excluded because its total is still growing. At least three completed months with expenses are required; the six-month fetch window allows at most five.
+- Calculates totals, category spending, savings rate, monthly trends, and savings profiles. Savings transfers, meaning expenses in the `Funds` or `Savings` category, count as saved rather than spent.
+- Fits `ml_algo`'s `LinearRegressor` on the spending totals of completed months, which exclude savings transfers, using months since the oldest month as the feature, and predicts the calendar month after the current one. The current month is excluded because its total is still growing. At least three completed months with expenses are required; the six-month fetch window allows at most five.
 - Generates budget suggestions from fixed spending/income thresholds; these are rule-based.
 - Computes a confidence heuristic from the number of months and the spread of monthly totals relative to their mean. There is no held-out evaluation or published error metric.
 
-The UI labels the result as next month's predicted total, which is what the model estimates. With three to five data points it is a rough trend line. Savings deposits are recorded as expenses and are included in the totals. Out-of-sample evaluation is a useful next step before relying on it.
+The UI labels the result as next month's predicted total, which is what the model estimates. With three to five data points it is a rough trend line. Savings transfers are left out of those totals. Out-of-sample evaluation is a useful next step before relying on it.
 
 ## Platforms and access
 

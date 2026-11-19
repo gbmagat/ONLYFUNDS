@@ -17,7 +17,7 @@ Developed by **KADI Group**. Repository contributors include [Javie Alfaro](http
 - **Experimental forecasting:** fit a linear regression model to completed months' expense totals and estimate next month's total, once at least three completed months have expenses.
 - **In-app alerts:** configurable snackbars and dialogs for spending, savings, reminders, and insights, with session-only notification history.
 
-Amounts are displayed in Philippine pesos (₱). Savings contributions are recorded as expenses and increase the monthly saved amount; no actual money is transferred.
+Amounts are displayed in Philippine pesos (₱). Savings contributions are recorded as expenses and increase the monthly saved amount. Reports count them as savings rather than spending. No actual money is transferred.
 
 ## Technical highlights
 
