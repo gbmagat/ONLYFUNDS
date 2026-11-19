@@ -200,6 +200,21 @@ void main() {
       final alert = alerts.singleWhere((a) => a['type'] == 'savings_alert');
       expect(alert['needed'], closeTo(1500, 0.001));
     });
+
+    test('are left out of the expense forecast', () async {
+      final predictions = await predictionsFor([
+        _tx('expense', 1000, DateTime(2026, 3, 10)),
+        _tx('expense', 1000, DateTime(2026, 4, 10)),
+        _tx('expense', 1000, DateTime(2026, 5, 10)),
+        // Growing deposits would otherwise look like rising spending.
+        _tx('expense', 500, DateTime(2026, 3, 20), category: 'Funds'),
+        _tx('expense', 1500, DateTime(2026, 4, 20), category: 'Funds'),
+        _tx('expense', 2500, DateTime(2026, 5, 20), category: 'Funds'),
+      ]);
+
+      expect(predictions['predictedAmount'], closeTo(1000, 1));
+      expect(predictions['trend'], 'stable');
+    });
   });
 
   test('returns the empty state when there are no transactions', () async {

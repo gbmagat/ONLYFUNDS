@@ -78,16 +78,17 @@ class AnalyticsService {
   ///
   /// Fits a linear regression to the expense totals of completed months and
   /// extends the line one month past the current one. The current month is
-  /// left out of the fit because its total is still growing.
+  /// left out of the fit because its total is still growing, and savings
+  /// transfers are left out because they are not spending.
   Future<Map<String, dynamic>> _predictFutureExpenses(
       List<Map<String, dynamic>> transactions, DateTime now) async {
     try {
       final currentMonthNumber = _monthNumber(now);
 
-      // Expense total for each completed month, keyed by month number.
+      // Spending total for each completed month, keyed by month number.
       final totalsByMonth = <int, double>{};
       for (final transaction in transactions) {
-        if (_safeConvertToString(transaction['type']) != 'expense') continue;
+        if (!_isSpending(transaction)) continue;
         final monthNumber = _monthNumber(transaction['date'] as DateTime);
         if (monthNumber >= currentMonthNumber) continue;
         final amount = _safeConvertToDouble(transaction['amount']);
