@@ -179,6 +179,27 @@ void main() {
       expect(metrics['savings'], closeTo(4000, 0.001));
       expect(metrics['savingsTransfers'], closeTo(500, 0.001));
     });
+
+    test('do not count against the monthly savings goal', () async {
+      final alerts = await alertsFor([
+        _income(10000, DateTime(2026, 6, 1)),
+        _tx('expense', 1000, DateTime(2026, 6, 2)),
+        // Most of this month's income moved into savings.
+        _tx('expense', 8500, DateTime(2026, 6, 3), category: 'Funds'),
+      ]);
+
+      expect(alerts.where((a) => a['type'] == 'savings_alert'), isEmpty);
+    });
+
+    test('overspending still raises the savings alert', () async {
+      final alerts = await alertsFor([
+        _income(10000, DateTime(2026, 6, 1)),
+        _tx('expense', 9500, DateTime(2026, 6, 2), category: 'Shopping/Other'),
+      ]);
+
+      final alert = alerts.singleWhere((a) => a['type'] == 'savings_alert');
+      expect(alert['needed'], closeTo(1500, 0.001));
+    });
   });
 
   test('returns the empty state when there are no transactions', () async {

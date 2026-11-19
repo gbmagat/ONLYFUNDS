@@ -254,7 +254,9 @@ class AnalyticsService {
     final earlierMonthCount = earlierMonthKeys.length;
 
     final currentIncome = _sumByType(currentMonth, 'income');
-    final currentSavings = currentIncome - _sumByType(currentMonth, 'expense');
+    // Money moved into savings counts as saved, so only spending is subtracted.
+    final currentSavings =
+        currentIncome - _sumAmounts(currentMonth.where(_isSpending));
 
     // Spending spike alerts: this month's spending in a category is already
     // well above what a whole month usually costs. Needs earlier history.
