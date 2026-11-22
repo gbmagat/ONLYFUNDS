@@ -201,7 +201,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     : null,
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -372,7 +372,7 @@ class _ReportsPageState extends State<ReportsPage> {
                   percentage,
                   _getCategoryColor(entry.key),
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),
@@ -507,7 +507,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w500),
                   ),
                 );
-              }).toList(),
+              }),
 
               if (categoryRecos.isEmpty)
                 const Text(
