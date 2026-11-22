@@ -35,6 +35,29 @@ flutter run -d <device-id>
 
 Android is the simplest starting point on Windows. iOS requires macOS, Xcode, and Flutter/Firebase platform setup. Configuration in source does not mean either platform has been verified on your machine.
 
+## Android release builds
+
+Release builds are signed with your own upload key when `android/key.properties` exists. Without that file they fall back to the debug key: `flutter run --release` works, but the build cannot be published to Google Play.
+
+1. Create an upload keystore. In PowerShell:
+
+   ```powershell
+   keytool -genkey -v -keystore $env:USERPROFILE\upload-keystore.jks -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+   ```
+
+2. Create `android/key.properties` with the passwords you chose and the keystore's location. Replace the capitalised values, and use double backslashes in Windows paths:
+
+   ```properties
+   storePassword=YOUR_STORE_PASSWORD
+   keyPassword=YOUR_KEY_PASSWORD
+   keyAlias=upload
+   storeFile=C:\\Users\\YOUR_USER_NAME\\upload-keystore.jks
+   ```
+
+3. Build with `flutter build appbundle`.
+
+`key.properties` and keystore files are git-ignored. Never commit them, and keep a backup of the keystore and its passwords. Before publishing, also replace the placeholder application ID `com.example.onlyfunds_v1`. That requires registering the new ID as an Android app in Firebase and replacing `android/app/google-services.json`.
+
 ## Troubleshooting
 
 | Symptom | Check |
