@@ -523,11 +523,17 @@ class AnalyticsService {
     final savingsRate = _safeConvertToDouble(metrics['savingsRate']);
     String profile = 'Balanced';
     
-    if (savingsRate > 25) profile = 'Super Saver';
-    else if (savingsRate > 15) profile = 'Good Saver';
-    else if (savingsRate > 5) profile = 'Moderate Saver';
-    else if (savingsRate >= 0) profile = 'Minimal Saver';
-    else profile = 'Over Spender';
+    if (savingsRate > 25) {
+      profile = 'Super Saver';
+    } else if (savingsRate > 15) {
+      profile = 'Good Saver';
+    } else if (savingsRate > 5) {
+      profile = 'Moderate Saver';
+    } else if (savingsRate >= 0) {
+      profile = 'Minimal Saver';
+    } else {
+      profile = 'Over Spender';
+    }
 
     return {
       'savingsProfile': profile,
