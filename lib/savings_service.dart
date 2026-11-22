@@ -62,44 +62,61 @@ class SavingsService {
 
 
 
-  /// Update the amount saved for the month
-  Future<void> updateAmountSaved(double amount) async {
+  /// Moves [amount] from this month's balance into savings.
+  ///
+  /// One Firestore transaction checks the amount against the balance and the
+  /// remaining goal, records it as an expense in the "Funds" category, and
+  /// updates the expense total, balance, and saved amount together, so a
+  /// failure can no longer deduct the money without recording the saving.
+  ///
+  /// Throws a [SavingsDepositException], with a message for the user, when
+  /// the amount is more than the balance or the remaining goal.
+  Future<void> depositToSavings(double amount) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception("No user logged in");
 
-    final String monthId = _getMonthId();
     final DateTime now = DateTime.now();
-
-    final summaryRef = _firestore
+    final monthRef = _firestore
         .collection("users")
         .doc(user.uid)
         .collection("monthly_records")
-        .doc(monthId)
-        .collection("summary")
-        .doc("record");
+        .doc(_getMonthId());
+    final summaryRef = monthRef.collection("summary").doc("record");
+    // Generated up front so a retried attempt rewrites the same record.
+    final depositRef = monthRef.collection("transactions").doc();
 
     await _firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(summaryRef);
+      final data = snapshot.data() ?? <String, dynamic>{};
+      final double totalExpense = (data["totalExpense"] ?? 0).toDouble();
+      final double balance = (data["balance"] ?? 0).toDouble();
+      final double targetSavings = (data["targetSavings"] ?? 0).toDouble();
+      final double amountSaved = (data["amountSaved"] ?? 0).toDouble();
+      final double remaining = targetSavings - amountSaved;
 
-      if (!snapshot.exists) {
-        transaction.set(summaryRef, {
-          "totalIncome": 0.0,
-          "totalExpense": 0.0,
-          "balance": 0.0,
-          "targetSavings": 0.0,
-          "amountSaved": amount,
-          "lastUpdated": now,
-        });
-      } else {
-        final data = snapshot.data() as Map<String, dynamic>;
-        double currentSaved = (data["amountSaved"] ?? 0).toDouble();
-        double newSaved = currentSaved + amount;
-
-        transaction.update(summaryRef, {
-          "amountSaved": newSaved,
-          "lastUpdated": now,
-        });
+      if (amount > balance) {
+        throw SavingsDepositException(
+            "Deposit exceeds available balance (₱${balance.toStringAsFixed(2)})");
       }
+      if (amount > remaining) {
+        throw SavingsDepositException(
+            "Deposit exceeds remaining goal (₱${remaining.toStringAsFixed(2)})");
+      }
+
+      transaction.set(depositRef, {
+        "label": "Savings",
+        "category": "Funds",
+        "description": "",
+        "amount": amount,
+        "type": "expense",
+        "date_added": now,
+      });
+      transaction.set(summaryRef, {
+        "totalExpense": totalExpense + amount,
+        "balance": balance - amount,
+        "amountSaved": amountSaved + amount,
+        "lastUpdated": now,
+      }, SetOptions(merge: true));
     });
   }
 
@@ -138,46 +155,6 @@ class SavingsService {
   String _getMonthId() {
     final now = DateTime.now();
     return "${now.year}-${now.month.toString().padLeft(2, '0')}";
-  }
-
-  Future<double> totalTarget() async {
-    final user = _auth.currentUser;
-    if (user == null) throw Exception("No user logged in");
-
-    final monthId = _getMonthId();
-    final goalsSnapshot = await _firestore
-        .collection("users")
-        .doc(user.uid)
-        .collection("monthly_records")
-        .doc(monthId)
-        .collection("goals")
-        .get();
-
-    double total = 0.0;
-    for (var doc in goalsSnapshot.docs) {
-      total += (doc.data()["amount"]?.toDouble() ?? 0.0);
-    }
-    return total;
-  }
-
-  /// Returns the total amount already saved for the current month
-  Future<double> totalSaved() async {
-    final user = _auth.currentUser;
-    if (user == null) throw Exception("No user logged in");
-
-    final monthId = _getMonthId();
-    final summaryRef = _firestore
-        .collection("users")
-        .doc(user.uid)
-        .collection("monthly_records")
-        .doc(monthId)
-        .collection("summary")
-        .doc("record");
-
-    final snapshot = await summaryRef.get();
-    if (!snapshot.exists) return 0.0;
-
-    return (snapshot.data()?["amountSaved"]?.toDouble() ?? 0.0);
   }
 
   Stream<double> currentAmountSaved() => _getSummaryField("amountSaved");
@@ -233,4 +210,14 @@ class SavingsService {
     return (data["amount"]?.toDouble() ?? 0.0);
   });
 }
+}
+
+/// A savings deposit that cannot be made, with a message for the user.
+class SavingsDepositException implements Exception {
+  const SavingsDepositException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }

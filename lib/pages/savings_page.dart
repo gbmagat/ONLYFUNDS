@@ -469,62 +469,21 @@ Widget _displayFundBox() {
                       if (depositAmount == null) return;
 
                       try {
-                        // Get current balance
-                        final availableBalance =
-                            await TransactionService().currentMonthBalance().first;
+                        // Checks the balance and the remaining goal, records
+                        // the deposit, and updates the totals in one
+                        // Firestore transaction.
+                        await _savingsService.depositToSavings(depositAmount);
+                      } on SavingsDepositException catch (e) {
                         // This context belongs to the sheet, which may have closed.
                         if (!context.mounted) return;
-
-                        if (depositAmount > availableBalance) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                  "Deposit exceeds available balance (₱${availableBalance.toStringAsFixed(2)})"),
-                            ),
-                          );
-                          return;
-                        }
-
-                        // Get total target and already saved amount
-                        final totalTarget = await _savingsService.totalTarget();
-                        final totalSaved = await _savingsService.totalSaved();
-                        final remaining = totalTarget - totalSaved;
-                        if (!context.mounted) return;
-
-                        if (depositAmount > remaining) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                  "Deposit exceeds remaining goal (₱${remaining.toStringAsFixed(2)})"),
-                            ),
-                          );
-                          return;
-                        }
-
-                        // Deduct from balance
-                        await TransactionService().deductFromBalance(
-                          amount: depositAmount,
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(e.message)),
                         );
+                        return;
                       } catch (e) {
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text("Deposit failed: $e")),
-                        );
-                        return;
-                      }
-
-                      // Deliberately no mounted check before this write: the
-                      // balance has already been deducted, so stopping here
-                      // would leave the saving unrecorded.
-                      try {
-                        await _savingsService.updateAmountSaved(depositAmount);
-                      } catch (e) {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                                "The amount was deducted from your balance, but the saved total did not update: $e"),
-                          ),
                         );
                         return;
                       }
