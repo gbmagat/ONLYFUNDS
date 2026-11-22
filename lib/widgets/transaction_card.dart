@@ -44,13 +44,19 @@ class TransactionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String formattedDate = "";
-    if (date != null) {
+    final added = date;
+    if (added != null) {
       final now = DateTime.now();
-      final difference = now.difference(date!).inDays;
+      // Count calendar days rather than 24-hour periods, so an entry from
+      // late last night reads "Yesterday" instead of a time. Comparing UTC
+      // dates keeps daylight-saving shifts out of the count.
+      final difference = DateTime.utc(now.year, now.month, now.day)
+          .difference(DateTime.utc(added.year, added.month, added.day))
+          .inDays;
 
-      if (difference == 0) {
+      if (difference <= 0) {
         final timeFormat = DateFormat.jm(); // e.g., 3:45 PM
-        formattedDate = timeFormat.format(date!);
+        formattedDate = timeFormat.format(added);
       } else if (difference == 1) {
         formattedDate = "Yesterday";
       } else {

@@ -35,6 +35,19 @@ void main() {
       expect(find.text('3 days ago'), findsOneWidget);
       expect(find.byIcon(Icons.restaurant_rounded), findsOneWidget);
     });
+
+    testWidgets('labels an entry from late yesterday as Yesterday', (tester) async {
+      final now = DateTime.now();
+      await tester.pumpWidget(_host(TransactionCard(
+        label: 'Late snack',
+        date: DateTime(now.year, now.month, now.day - 1, 23, 59),
+        amount: 80,
+        type: 'expense',
+        category: 'Food/Grocery',
+      )));
+
+      expect(find.text('Yesterday'), findsOneWidget);
+    });
   });
 
   group('Button', () {
