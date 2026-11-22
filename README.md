@@ -23,7 +23,7 @@ Amounts are displayed in Philippine pesos (₱). Savings contributions are recor
 
 - Separates authentication, user records, transactions, savings, analytics, and notifications into Dart service classes alongside page widgets.
 - Organizes Firestore records by user and calendar month, with a summary document for dashboard totals.
-- Uses Firestore transactions for selected summary and balance updates, and `StreamBuilder` for live dashboard and history views.
+- Saves each transaction, savings deposit, and savings goal together with its monthly totals in one atomic Firestore write, and uses `StreamBuilder` for live dashboard and history views.
 - Integrates client-side linear regression with insufficient-data and error states. Budget recommendations use spending thresholds rather than a trained recommendation model.
 
 See [architecture and data model](docs/ARCHITECTURE.md) for implementation details and tradeoffs.
@@ -81,7 +81,7 @@ This repository presents the current project implementation. It has no documente
 
 - Add Firebase emulator-backed integration tests for sign-in, transactions, and savings. The current unit and widget tests run without Firebase.
 - Version and test Firestore security rules and emulator configuration.
-- Make transaction creation, balance validation, and summary updates atomic as a complete operation; combine savings deduction and saved-total updates.
+- Test concurrent submissions and failure handling for transactions, deposits, and goals against the Firestore emulator.
 - Evaluate the monthly forecast against a baseline with held-out months. It fits at most five completed months, so it is a rough trend line rather than a validated forecast; its confidence score is a heuristic.
 - Persist notification preferences/history and add scheduled device notifications if needed.
 - Add verified app screenshots and a short recorded demo.

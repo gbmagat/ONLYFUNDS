@@ -18,8 +18,7 @@ For changes to records or totals, follow [the demo walkthrough](docs/DEMO.md). A
 ## Useful next contributions
 
 - Add/test versioned Firestore rules, required indexes, and emulator setup.
-- Make balance validation, transaction creation, and summary writes atomic; test concurrent submissions and partial failures.
-- Combine savings deduction and saved-total updates.
+- Test concurrent submissions and failure handling for transactions, deposits, and goals against the Firestore emulator.
 - Verify in an emulator that account deletion removes nested records when monthly parent documents do not exist.
 - Add service, widget, and integration tests for budgeting flows.
 - Evaluate the monthly-total regression against a baseline with held-out error metrics, and test it with seeded multi-month data.
