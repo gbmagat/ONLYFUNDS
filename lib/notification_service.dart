@@ -168,7 +168,7 @@ class NotificationService {
     showNotificationSnackBar(
       context,
       title: '💰 Savings Update',
-      message: 'You saved ₱${currentAmount.toStringAsFixed(0)} (${progress}%) of your goal. $daysLeft days left!',
+      message: 'You saved ₱${currentAmount.toStringAsFixed(0)} ($progress%) of your goal. $daysLeft days left!',
       color: Colors.green,
     );
   }
