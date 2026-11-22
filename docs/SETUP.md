@@ -20,7 +20,7 @@ The checked-in client configuration identifies the original Firebase project. Us
    ```
 
 5. Select your own project and mobile platforms. Verify that `lib/firebase_options.dart` and platform configuration files refer to your project. The Android application ID is currently `com.example.onlyfunds_v1`; the iOS bundle ID in the committed Firebase options is `com.example.onlyfundsV1`.
-6. Deploy the Firestore rules before using the app. All application records live under `users/{uid}`, and `firestore.rules` lets each signed-in user read and write only their own records, including nested monthly records. From the repository root, run `firebase deploy --only firestore:rules`. The file does not show which rules are currently deployed; check the Firebase console.
+6. Deploy the Firestore rules before using the app. All application records live under `users/{uid}`, and `firestore.rules` lets each signed-in user read and write only their own records, including nested monthly records. The [rules tests](../CONTRIBUTING.md#firestore-rules-tests) check this on the local emulator. From the repository root, run `firebase deploy --only firestore:rules`. The file does not show which rules are currently deployed; check the Firebase console.
 
 Do not leave a database open in test mode for a shared demo. Use disposable data. Never commit service-account credentials, private keys, or Firebase CLI tokens.
 
@@ -65,10 +65,12 @@ Release builds are signed with your own upload key when `android/key.properties`
 | Dependency resolution fails | Confirm Dart satisfies `^3.9.0`. Investigate package constraints before upgrading the lockfile. |
 | Email/password registration fails | Enable the Email/Password provider in the selected Firebase project. |
 | Firestore returns `permission-denied` | Confirm you are signed in and that `firestore.rules` is deployed to the selected project. |
+| `npm ci` fails in `firestore-tests` | Use Node.js 24.12 or later, which `@firebase/rules-unit-testing` 6 requires. |
+| Rules tests cannot start the emulator | Install Java 21 or later and make sure `java` is on your `PATH`. Port 8080 must be free, so stop any other Firestore emulator first. |
 | Unsupported Firebase platform | Committed options support Android/iOS only. Configure other platforms and verify plugin compatibility first. |
 | Empty dashboard/history | Add income first. These views read the current calendar month. |
 | Expense rejected | The expense exceeds the recorded monthly balance. Savings deposits also consume that balance. |
 | Prediction unavailable | Expenses in at least three completed calendar months are required; the current month does not count. Fitting errors or non-positive results can also prevent a prediction. |
 | Notification settings reset | Preferences/history are held in memory; persistent storage is not implemented. |
 
-See [development and validation](../CONTRIBUTING.md) for checks. The unit and widget tests run without Firebase and do not cover the Firebase-backed pages.
+See [development and validation](../CONTRIBUTING.md) for checks. The unit and widget tests run without Firebase and do not cover the Firebase-backed pages. The rules tests check `firestore.rules` on the local emulator, not the rules deployed to your project.
