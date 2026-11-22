@@ -20,7 +20,7 @@ The checked-in client configuration identifies the original Firebase project. Us
    ```
 
 5. Select your own project and mobile platforms. Verify that `lib/firebase_options.dart` and platform configuration files refer to your project. The Android application ID is currently `com.example.onlyfunds_v1`; the iOS bundle ID in the committed Firebase options is `com.example.onlyfundsV1`.
-6. Configure Firestore rules before using the app. All application records live under `users/{uid}`. Restrict access to the authenticated owner, including nested monthly records. This repository contains no rules file, so it does not establish which rules are deployed.
+6. Deploy the Firestore rules before using the app. All application records live under `users/{uid}`, and `firestore.rules` lets each signed-in user read and write only their own records, including nested monthly records. From the repository root, run `firebase deploy --only firestore:rules`. The file does not show which rules are currently deployed; check the Firebase console.
 
 Do not leave a database open in test mode for a shared demo. Use disposable data. Never commit service-account credentials, private keys, or Firebase CLI tokens.
 
@@ -41,7 +41,7 @@ Android is the simplest starting point on Windows. iOS requires macOS, Xcode, an
 | --- | --- |
 | Dependency resolution fails | Confirm Dart satisfies `^3.9.0`. Investigate package constraints before upgrading the lockfile. |
 | Email/password registration fails | Enable the Email/Password provider in the selected Firebase project. |
-| Firestore returns `permission-denied` | Confirm sign-in and rules permitting owner access to their user document and nested collections. |
+| Firestore returns `permission-denied` | Confirm you are signed in and that `firestore.rules` is deployed to the selected project. |
 | Unsupported Firebase platform | Committed options support Android/iOS only. Configure other platforms and verify plugin compatibility first. |
 | Empty dashboard/history | Add income first. These views read the current calendar month. |
 | Expense rejected | The expense exceeds the recorded monthly balance. Savings deposits also consume that balance. |

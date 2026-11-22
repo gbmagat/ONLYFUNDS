@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// OnlyFunds keeps all data under users/{uid}: the profile document and
+// monthly_records/{YYYY-MM} with its transactions, goals, and summary.
+// Each signed-in user may read and write only their own tree. In rules
+// version 2, {document=**} also matches the users/{uid} document itself.
+// Every other path is denied.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

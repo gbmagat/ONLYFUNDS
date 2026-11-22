@@ -17,7 +17,7 @@ For changes to records or totals, follow [the demo walkthrough](docs/DEMO.md). A
 
 ## Useful next contributions
 
-- Add/test versioned Firestore rules, required indexes, and emulator setup.
+- Add Firestore emulator setup and tests for the owner-only rules in `firestore.rules`.
 - Test concurrent submissions and failure handling for transactions, deposits, and goals against the Firestore emulator.
 - Verify in an emulator that account deletion removes nested records when monthly parent documents do not exist.
 - Add service, widget, and integration tests for budgeting flows.
