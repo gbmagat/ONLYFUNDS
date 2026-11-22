@@ -333,7 +333,7 @@ class AnalyticsService {
 
   double _sumAmounts(Iterable<Map<String, dynamic>> transactions) =>
       transactions.fold(
-          0.0, (sum, item) => sum + _safeConvertToDouble(item['amount']));
+          0.0, (total, item) => total + _safeConvertToDouble(item['amount']));
 
   /// FIXED: Proper type handling for Firestore data
   Future<List<Map<String, dynamic>>> _getHistoricalTransactions(String userId, {int months = 6}) async {
