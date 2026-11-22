@@ -1,5 +1,7 @@
 # OnlyFunds — Budget Management System
 
+[![CI](https://github.com/gbmagat/ONLYFUNDS/actions/workflows/ci.yml/badge.svg)](https://github.com/gbmagat/ONLYFUNDS/actions/workflows/ci.yml)
+
 A Flutter mobile app for recording daily income and expenses, setting monthly savings goals, and reviewing spending patterns. OnlyFunds brings transaction tracking, Firebase-backed accounts, and experimental expense forecasting into one personal budgeting workflow.
 
 **Built with:** Flutter · Dart · Firebase Authentication · Cloud Firestore · `ml_algo`
@@ -26,6 +28,7 @@ Amounts are displayed in Philippine pesos (₱). Savings contributions are recor
 - Saves each transaction, savings deposit, and savings goal together with its monthly totals in one atomic Firestore write, and uses `StreamBuilder` for live dashboard and history views.
 - Integrates client-side linear regression with insufficient-data and error states. Budget recommendations use spending thresholds rather than a trained recommendation model.
 - Restricts each user to their own Firestore records with owner-only security rules, which are tested against the local Firestore emulator.
+- Runs `flutter analyze`, `flutter test`, and the rules tests on GitHub Actions for every push and pull request, and reports problems as annotations on the commit.
 
 See [architecture and data model](docs/ARCHITECTURE.md) for implementation details and tradeoffs.
 
@@ -33,7 +36,7 @@ See [architecture and data model](docs/ARCHITECTURE.md) for implementation detai
 
 ### Prerequisites
 
-- Flutter SDK with Dart **3.9 or later within Dart 3.x** (`pubspec.yaml` declares `^3.9.0`).
+- Flutter SDK with Dart **3.9 or later within Dart 3.x** (`pubspec.yaml` declares `^3.9.0`). CI uses Flutter 3.35.1.
 - Android Studio/Android SDK and an emulator or Android device. iOS development requires macOS and Xcode.
 - Your own Firebase project with Email/Password Authentication and Cloud Firestore enabled.
 
@@ -76,6 +79,7 @@ docs/                         # Setup, architecture, and demo notes
 test/                         # Unit and widget tests that run without Firebase
 firestore.rules               # Owner-only Firestore access rules
 firestore-tests/              # Emulator tests for the Firestore rules (Node.js)
+.github/workflows/ci.yml      # CI: analyzer, Flutter tests, and rules tests
 ```
 
 ## Status and next steps
