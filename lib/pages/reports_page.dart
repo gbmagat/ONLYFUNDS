@@ -72,7 +72,7 @@ class _ReportsPageState extends State<ReportsPage> {
         });
       }
     } catch (e) {
-      print('Error loading insights: $e');
+      debugPrint('Error loading insights: $e');
       if (mounted && showProgress) {
         setState(() {
           _hasError = true;

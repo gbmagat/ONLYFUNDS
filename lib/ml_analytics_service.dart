@@ -2,7 +2,7 @@
 import 'dart:math' show sqrt;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 import 'package:ml_algo/ml_algo.dart';
 import 'package:ml_dataframe/ml_dataframe.dart';
 
@@ -159,7 +159,7 @@ class AnalyticsService {
         if (!hasForecast) 'message': 'No forecast is available for the current data',
       };
     } catch (e) {
-      print('ML Prediction error: $e');
+      debugPrint('ML Prediction error: $e');
       return {
         'error': 'Prediction unavailable',
         'message': 'Add more expense data to enable predictions'
@@ -373,7 +373,7 @@ class AnalyticsService {
           allTransactions.add(transaction);
         }
       } catch (e) {
-        print('Error fetching transactions for $monthId: $e');
+        debugPrint('Error fetching transactions for $monthId: $e');
       }
     }
 

@@ -267,12 +267,12 @@ class NotificationService {
     if (reminderAlerts != null) _reminderAlertsEnabled = reminderAlerts;
     if (insightAlerts != null) _insightAlertsEnabled = insightAlerts;
 
-    print('Notification settings updated:');
-    print('Spending Alerts: $_spendingAlertsEnabled');
-    print('Savings Alerts: $_savingsAlertsEnabled');
-    print('Budget Alerts: $_budgetAlertsEnabled');
-    print('Reminder Alerts: $_reminderAlertsEnabled');
-    print('Insight Alerts: $_insightAlertsEnabled');
+    debugPrint('Notification settings updated:');
+    debugPrint('Spending Alerts: $_spendingAlertsEnabled');
+    debugPrint('Savings Alerts: $_savingsAlertsEnabled');
+    debugPrint('Budget Alerts: $_budgetAlertsEnabled');
+    debugPrint('Reminder Alerts: $_reminderAlertsEnabled');
+    debugPrint('Insight Alerts: $_insightAlertsEnabled');
   }
 
   // GETTERS FOR SETTINGS (optional - if you want to display current settings)
