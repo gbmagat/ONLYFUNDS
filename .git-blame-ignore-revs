@@ -1,0 +1,6 @@
+# Commits that only change formatting. GitHub's blame view skips the commits
+# listed here. To skip them in local `git blame` too, run:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# chore: store the last CRLF files with LF line endings
+6b00c1ea4e17a3545d22de2dfc8350b2663bbdb9
