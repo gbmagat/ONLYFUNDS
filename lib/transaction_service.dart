@@ -28,67 +28,53 @@ class TransactionService {
 
     final summaryRef = monthRef.collection("summary").doc("record");
 
-    // Check balance before expense
-    final summarySnapshot = await summaryRef.get();
-    double currentBalance = 0.0;
-    if (summarySnapshot.exists) {
-      final data = summarySnapshot.data() as Map<String, dynamic>;
-      currentBalance = (data["balance"] ?? 0).toDouble();
-    }
+    // Generated up front so the record and the summary change can be written
+    // in the same Firestore transaction.
+    final recordRef = monthRef.collection("transactions").doc();
 
-    if (type == "expense" && amount > currentBalance) {
-      throw Exception(
-          "Insufficient balance. Cannot record expense greater than current balance.");
-    }
-
-    // 1. Add transaction
-    await monthRef.collection("transactions").add({
-      "label": label,
-      "category": category,
-      "description": description ?? '',
-      "amount": amount,
-      "type": type,
-      "date_added": now,
-    });
-
-    // 2. Update summary atomically
+    // Check the balance, add the record, and update the monthly summary in one
+    // Firestore transaction. As separate steps, two quick expenses could both
+    // pass the balance check, and a failed summary update left a record that
+    // the monthly totals never counted. Firestore may run this more than once
+    // if the summary changes meanwhile; the fixed record ID keeps that safe.
     await _firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(summaryRef);
+      final data = snapshot.data() ?? <String, dynamic>{};
+      double totalIncome = (data["totalIncome"] ?? 0).toDouble();
+      double totalExpense = (data["totalExpense"] ?? 0).toDouble();
+      final double currentBalance = (data["balance"] ?? 0).toDouble();
 
-      if (!snapshot.exists) {
-        transaction.set(summaryRef, {
-          "totalIncome": type == "income" ? amount : 0,
-          "totalExpense": type == "expense" ? amount : 0,
-          "balance": type == "income" ? amount : 0,
-          "targetSavings": 0.0, // initial target savings
-          "amountSaved": 0.0,   // initial saved amount
-          "lastUpdated": now,
-        });
-      } else {
-        final data = snapshot.data() as Map<String, dynamic>;
-        double totalIncome = (data["totalIncome"] ?? 0).toDouble();
-        double totalExpense = (data["totalExpense"] ?? 0).toDouble();
-        double targetSavings = (data["targetSavings"] ?? 0).toDouble();
-        double amountSaved = (data["amountSaved"] ?? 0).toDouble();
-
-        if (type == "income") {
-          totalIncome += amount;
-        } else {
-          totalExpense += amount;
-        }
-
-        final newBalance =
-            (totalIncome - totalExpense).clamp(0, double.infinity);
-
-        transaction.update(summaryRef, {
-          "totalIncome": totalIncome,
-          "totalExpense": totalExpense,
-          "balance": newBalance,
-          "targetSavings": targetSavings,
-          "amountSaved": amountSaved,
-          "lastUpdated": now,
-        });
+      if (type == "expense" && amount > currentBalance) {
+        throw Exception(
+            "Insufficient balance. Cannot record expense greater than current balance.");
       }
+
+      if (type == "income") {
+        totalIncome += amount;
+      } else {
+        totalExpense += amount;
+      }
+      final newBalance =
+          (totalIncome - totalExpense).clamp(0, double.infinity);
+
+      transaction.set(recordRef, {
+        "label": label,
+        "category": category,
+        "description": description ?? '',
+        "amount": amount,
+        "type": type,
+        "date_added": now,
+      });
+
+      // Merge, so the savings fields kept in the same document survive.
+      transaction.set(summaryRef, {
+        "totalIncome": totalIncome,
+        "totalExpense": totalExpense,
+        "balance": newBalance,
+        if (!snapshot.exists) "targetSavings": 0.0,
+        if (!snapshot.exists) "amountSaved": 0.0,
+        "lastUpdated": now,
+      }, SetOptions(merge: true));
     });
   }
 
