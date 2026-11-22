@@ -30,6 +30,13 @@ class _ReportsPageState extends State<ReportsPage> {
   bool _hasError = false;
   bool _loadInFlight = false;
 
+  // The same peso format as the dashboard and savings pages, with thousands
+  // separators, for example ₱1,500.00.
+  static final NumberFormat _pesoFormat =
+      NumberFormat.currency(locale: 'en_PH', symbol: '₱');
+
+  String _peso(num amount) => _pesoFormat.format(amount);
+
   @override
   void initState() {
     super.initState();
@@ -195,7 +202,7 @@ class _ReportsPageState extends State<ReportsPage> {
                 ),
                 subtitle: alertData['amount'] != null 
                     ? Text(
-                        'Amount: ₱${alertData['amount'].toStringAsFixed(2)}',
+                        'Amount: ${_peso(alertData['amount'])}',
                         style: const TextStyle(color: Colors.white70),
                       )
                     : null,
@@ -256,7 +263,7 @@ class _ReportsPageState extends State<ReportsPage> {
               if (savingsTransfers > 0) ...[
                 const SizedBox(height: 4),
                 Text(
-                  'Includes ₱${savingsTransfers.toStringAsFixed(2)} moved into savings, counted as saved rather than spent.',
+                  'Includes ${_peso(savingsTransfers)} moved into savings, counted as saved rather than spent.',
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
@@ -295,7 +302,7 @@ class _ReportsPageState extends State<ReportsPage> {
                 Column(
                   children: [
                     Text(
-                      'Predicted total expenses for $monthLabel: ₱${predictedAmount.toStringAsFixed(2)}',
+                      'Predicted total expenses for $monthLabel: ${_peso(predictedAmount)}',
                       style: const TextStyle(fontSize: 16),
                     ),
                     const SizedBox(height: 8),
@@ -394,7 +401,7 @@ class _ReportsPageState extends State<ReportsPage> {
                 style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               Text(
-                '₱${amount.toStringAsFixed(2)} (${percentage.toStringAsFixed(1)}%)',
+                '${_peso(amount)} (${percentage.toStringAsFixed(1)}%)',
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
@@ -453,7 +460,7 @@ class _ReportsPageState extends State<ReportsPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Progress: ₱${currentSavings.toStringAsFixed(2)} / ₱${recommendedTarget.toStringAsFixed(2)}',
+                'Progress: ${_peso(currentSavings)} / ${_peso(recommendedTarget)}',
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
@@ -503,7 +510,7 @@ class _ReportsPageState extends State<ReportsPage> {
                   title: Text(category),
                   subtitle: Text(data['advice'] ?? ''),
                   trailing: Text(
-                    'Save ₱${potentialSavings.toStringAsFixed(2)}',
+                    'Save ${_peso(potentialSavings)}',
                     style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w500),
                   ),
                 );
@@ -537,7 +544,7 @@ class _ReportsPageState extends State<ReportsPage> {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              '₱${amount.toStringAsFixed(2)}',
+              _peso(amount),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
