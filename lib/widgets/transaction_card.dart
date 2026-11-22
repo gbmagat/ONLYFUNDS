@@ -9,13 +9,13 @@ class TransactionCard extends StatelessWidget {
   final String category; 
 
   const TransactionCard({
-    Key? key,
+    super.key,
     required this.label,
     required this.date,
     required this.amount,
     required this.type,
     required this.category, 
-  }) : super(key: key);
+  });
 
 
   IconData _getCategoryIcon(String category) {

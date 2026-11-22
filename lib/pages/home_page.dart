@@ -12,7 +12,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Home Page with Bottom Nav
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -127,7 +127,7 @@ class _HomePageState extends State<HomePage> {
 
 /// Home Page Content
 class HomePageContent extends StatefulWidget {
-  const HomePageContent({Key? key}) : super(key: key);
+  const HomePageContent({super.key});
 
   @override
   State<HomePageContent> createState() => _HomePageContentState();
