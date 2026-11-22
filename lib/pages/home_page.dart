@@ -409,13 +409,13 @@ class _HomePageContentState extends State<HomePageContent> {
                                   type: "income",
                                 );
                               } catch (e) {
-                                if (!mounted) return;
+                                if (!context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text(e.toString())),
                                 );
                                 return;
                               }
-                              if (!mounted) return;
+                              if (!context.mounted) return;
 
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -451,7 +451,7 @@ class _HomePageContentState extends State<HomePageContent> {
                                   amount: double.parse(_amountController.text.trim()),
                                   type: "expense",
                                 );
-                                if (!mounted) return;
+                                if (!context.mounted) return;
 
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text("Expense Added!")),
@@ -464,7 +464,7 @@ class _HomePageContentState extends State<HomePageContent> {
                                   _selectedCategory = null;
                                 });
                               } catch (e) {
-                                if (!mounted) return;
+                                if (!context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text(e.toString())),
                                 );
