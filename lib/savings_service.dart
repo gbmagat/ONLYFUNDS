@@ -25,42 +25,22 @@ class SavingsService {
   final goalsRef = monthRef.collection("goals").doc(category);
   final summaryRef = monthRef.collection("summary").doc("record");
 
-  // Read all goals outside transaction to calculate totalTargetSavings safely
-  final allGoalsSnapshot = await monthRef.collection("goals").get();
-  double totalTargetSavings = allGoalsSnapshot.docs.fold<double>(
-      0.0,
-      (sum, doc) => sum + (doc.data()["amount"]?.toDouble() ?? 0.0));
-
-  // Get current goal amount for this category
-  final goalSnapshot = await goalsRef.get();
-  double newGoalAmount = amount;
-  if (goalSnapshot.exists) {
-    newGoalAmount += (goalSnapshot.data()?["amount"]?.toDouble() ?? 0.0);
-  }
-
-  // Update/add goal
-  await goalsRef.set({
-    "amount": newGoalAmount,
+  // Raise the category's goal and the month's combined target together, in
+  // one batch. Increments need no prior read, so a change saved in the
+  // meantime, such as a new transaction, can no longer be overwritten with
+  // stale totals. Merging leaves the summary's other fields untouched, and a
+  // missing field counts as zero.
+  final batch = _firestore.batch();
+  batch.set(goalsRef, {
+    "amount": FieldValue.increment(amount),
     "lastUpdated": now,
-  });
-
-  // Update summary document
-  final summarySnapshot = await summaryRef.get();
-  double amountSaved = summarySnapshot.exists
-      ? (summarySnapshot.data()?["amountSaved"] ?? 0.0)
-      : 0.0;
-
-  await summaryRef.set({
-    "totalIncome": summarySnapshot.data()?["totalIncome"] ?? 0.0,
-    "totalExpense": summarySnapshot.data()?["totalExpense"] ?? 0.0,
-    "balance": summarySnapshot.data()?["balance"] ?? 0.0,
-    "targetSavings": totalTargetSavings - (goalSnapshot.exists ? (goalSnapshot.data()?["amount"]?.toDouble() ?? 0.0) : 0.0) + newGoalAmount,
-    "amountSaved": amountSaved,
+  }, SetOptions(merge: true));
+  batch.set(summaryRef, {
+    "targetSavings": FieldValue.increment(amount),
     "lastUpdated": now,
-  });
+  }, SetOptions(merge: true));
+  await batch.commit();
 }
-
-
 
   /// Moves [amount] from this month's balance into savings.
   ///
