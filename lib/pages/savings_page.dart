@@ -193,8 +193,9 @@ class _SavingsPageState extends State<SavingsPage> {
   }
 
   Widget _fundBox(String category, String amount, Color color) {
+    // No fixed width: each box takes half of its row (see _displayFundBox),
+    // so the pair fits narrow phones instead of overflowing.
     return SizedBox(
-      width: 180,
       height: 80,
       child: Card(
         color: color,
@@ -206,6 +207,7 @@ class _SavingsPageState extends State<SavingsPage> {
           children: [
             Text(
               category,
+              textAlign: TextAlign.center,
               style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Color.fromARGB(160, 0, 0, 0)),
@@ -243,15 +245,15 @@ Widget _displayFundBox() {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _fundBoxDynamic("Emergency Fund", const Color.fromARGB(255, 255, 60, 0)),
-          _fundBoxDynamic("Travel Fund", const Color.fromARGB(255, 0, 247, 255)),
+          Expanded(child: _fundBoxDynamic("Emergency Fund", const Color.fromARGB(255, 255, 60, 0))),
+          Expanded(child: _fundBoxDynamic("Travel Fund", const Color.fromARGB(255, 0, 247, 255))),
         ],
       ),
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _fundBoxDynamic("School Fund", const Color.fromARGB(255, 255, 230, 0)),
-          _fundBoxDynamic("Miscellaneous Fund", const Color.fromARGB(255, 0, 255, 85)),
+          Expanded(child: _fundBoxDynamic("School Fund", const Color.fromARGB(255, 255, 230, 0))),
+          Expanded(child: _fundBoxDynamic("Miscellaneous Fund", const Color.fromARGB(255, 0, 255, 85))),
         ],
       ),
     ],
