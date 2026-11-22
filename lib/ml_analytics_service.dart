@@ -316,11 +316,9 @@ class AnalyticsService {
   String _monthKey(DateTime date) =>
       "${date.year}-${date.month.toString().padLeft(2, '0')}";
 
-  double _sumByType(List<Map<String, dynamic>> transactions, String type) {
-    return transactions
-        .where((t) => _safeConvertToString(t['type']) == type)
-        .fold(0.0, (sum, item) => sum + _safeConvertToDouble(item['amount']));
-  }
+  double _sumByType(List<Map<String, dynamic>> transactions, String type) =>
+      _sumAmounts(
+          transactions.where((t) => _safeConvertToString(t['type']) == type));
 
   /// Whether [transaction] moves money into savings; see [savingsCategories].
   bool _isSavingsTransfer(Map<String, dynamic> transaction) =>
@@ -451,7 +449,7 @@ class AnalyticsService {
     final lastDate = dates.reduce((a, b) => a.isAfter(b) ? a : b);
     final months = (lastDate.difference(firstDate).inDays / 30).ceil();
     
-    final total = transactions.fold(0.0, (sum, item) => sum + _safeConvertToDouble(item['amount']));
+    final total = _sumAmounts(transactions);
     return total / (months > 0 ? months : 1);
   }
 
