@@ -11,7 +11,7 @@ flutter test
 git diff --check
 ```
 
-These commands are not a claim that every check currently passes. The tests in `test/` cover amount validation, the shared widgets, and the report calculations, including the monthly forecast and alerts, without Firebase. Pages and services that call Firebase are not tested yet; add Firebase doubles or emulator-backed integration tests before relying on the suite as a quality gate.
+[CI](#continuous-integration) runs the first three on every push and pull request. The tests in `test/` cover amount validation, the shared widgets, and the report calculations, including the monthly forecast and alerts, without Firebase. Pages and services that call Firebase are not tested yet, so a passing CI run says nothing about them; add Firebase doubles or emulator-backed integration tests before relying on the suite as a quality gate.
 
 For changes to records or totals, follow [the demo walkthrough](docs/DEMO.md). Also check empty accounts, invalid amounts, insufficient balance, sign-out/sign-in, multiple users, and a new month.
 
@@ -26,6 +26,15 @@ npm test
 ```
 
 The first run downloads the Firestore emulator (about 140 MB) into `~/.cache/firebase/emulators`. The tests use the offline demo project `demo-onlyfunds`, so they never read or change a real Firebase project. They check that each signed-in user can read and write only their own `users/{uid}` tree, and that other users, signed-out visitors, and paths outside `users/` are denied. Run them after every change to `firestore.rules`, and add a test when the app starts writing to a new path.
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push to `main`, on every pull request, and on demand from the repository's **Actions** tab. It has two jobs:
+
+- **Flutter analyze and test** installs Flutter 3.35.1, the release recorded in `.metadata`. It runs `flutter pub get`, checks that `pubspec.lock` did not change, then runs `flutter analyze` and `flutter test`.
+- **Firestore rules tests** runs `npm ci` and `npm test` in `firestore-tests/` with Node.js 24 and Java 21.
+
+Analyzer findings, failing tests, and an out-of-date `pubspec.lock` show up as annotations on the commit or pull request, so you rarely need the job log. `flutter analyze` fails on info-level lints as well as warnings and errors. If the lockfile check fails, run `flutter pub get` with Flutter 3.35.1 and commit `pubspec.lock`; the annotation shows what pub changed. When the project moves to a newer Flutter release, update `flutter-version` in the workflow.
 
 ## Useful next contributions
 

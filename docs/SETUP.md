@@ -2,7 +2,7 @@
 
 ## Dependencies
 
-Install Flutter with a Dart SDK compatible with `^3.9.0`, then run `flutter doctor` and `flutter pub get` from the repository root. Keep `pubspec.lock` when reproducing the project; upgrading dependencies is a separate change.
+Install Flutter with a Dart SDK compatible with `^3.9.0`, then run `flutter doctor` and `flutter pub get` from the repository root. Keep `pubspec.lock` when reproducing the project; upgrading dependencies is a separate change. CI uses Flutter 3.35.1 and fails when `flutter pub get` would change `pubspec.lock`, so commit the lockfile together with any `pubspec.yaml` change.
 
 ## Firebase configuration
 
@@ -63,6 +63,7 @@ Release builds are signed with your own upload key when `android/key.properties`
 | Symptom | Check |
 | --- | --- |
 | Dependency resolution fails | Confirm Dart satisfies `^3.9.0`. Investigate package constraints before upgrading the lockfile. |
+| CI reports "pubspec.lock is out of date" | Run `flutter pub get` with Flutter 3.35.1 and commit `pubspec.lock`. The annotation shows the changes pub made. |
 | Email/password registration fails | Enable the Email/Password provider in the selected Firebase project. |
 | Firestore returns `permission-denied` | Confirm you are signed in and that `firestore.rules` is deployed to the selected project. |
 | `npm ci` fails in `firestore-tests` | Use Node.js 24.12 or later, which `@firebase/rules-unit-testing` 6 requires. |
