@@ -522,23 +522,31 @@ class _ReportsPageState extends State<ReportsPage> {
   }
 
   // Helper Widgets
+  /// One of the three summary figures. Each takes a third of the row and
+  /// scales its amount down only when it would not fit, so large totals
+  /// cannot overflow a narrow screen.
   Widget _buildMetricTile(String title, double amount, Color color) {
-    return Column(
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '₱${amount.toStringAsFixed(2)}',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: color,
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
-        ),
-      ],
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '₱${amount.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
