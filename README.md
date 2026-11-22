@@ -25,6 +25,7 @@ Amounts are displayed in Philippine pesos (₱). Savings contributions are recor
 - Organizes Firestore records by user and calendar month, with a summary document for dashboard totals.
 - Saves each transaction, savings deposit, and savings goal together with its monthly totals in one atomic Firestore write, and uses `StreamBuilder` for live dashboard and history views.
 - Integrates client-side linear regression with insufficient-data and error states. Budget recommendations use spending thresholds rather than a trained recommendation model.
+- Restricts each user to their own Firestore records with owner-only security rules, which are tested against the local Firestore emulator.
 
 See [architecture and data model](docs/ARCHITECTURE.md) for implementation details and tradeoffs.
 
@@ -74,14 +75,14 @@ assets/images/                # Onboarding illustrations
 docs/                         # Setup, architecture, and demo notes
 test/                         # Unit and widget tests that run without Firebase
 firestore.rules               # Owner-only Firestore access rules
+firestore-tests/              # Emulator tests for the Firestore rules (Node.js)
 ```
 
 ## Status and next steps
 
 This repository presents the current project implementation. It has no documented production release or model accuracy benchmark. Areas for further work include:
 
-- Add Firebase emulator-backed integration tests for sign-in, transactions, and savings. The current unit and widget tests run without Firebase.
-- Test the owner-only rules in `firestore.rules` with the Firestore emulator.
+- Add Firebase emulator-backed integration tests for sign-in, transactions, and savings. The current unit and widget tests run without Firebase, and the emulator tests cover only the security rules.
 - Test concurrent submissions and failure handling for transactions, deposits, and goals against the Firestore emulator.
 - Evaluate the monthly forecast against a baseline with held-out months. It fits at most five completed months, so it is a rough trend line rather than a validated forecast; its confidence score is a heuristic.
 - Persist notification preferences/history and add scheduled device notifications if needed.

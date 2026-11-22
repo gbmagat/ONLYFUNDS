@@ -58,4 +58,4 @@ The UI labels the result as next month's predicted total, which is what the mode
 
 ## Platforms and access
 
-Firebase options cover Android and iOS only. Generated desktop/web folders remain, but those platforms are rejected by initialization. `firestore.rules` restricts each signed-in user to their own `users/{uid}` tree and denies every other path. It takes effect only once deployed with the Firebase CLI, and the file alone does not show which rules are live. The app's queries filter or sort on at most one field, so they need no composite indexes.
+Firebase options cover Android and iOS only. Generated desktop/web folders remain, but those platforms are rejected by initialization. `firestore.rules` restricts each signed-in user to their own `users/{uid}` tree and denies every other path. The tests in `firestore-tests/` check this against the local Firestore emulator. The rules take effect only once deployed with the Firebase CLI, and the file alone does not show which rules are live. The app's queries filter or sort on at most one field, so they need no composite indexes.
