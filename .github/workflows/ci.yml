@@ -36,7 +36,19 @@ jobs:
         id: pub-get
         run: flutter pub get
 
+      - name: Check that pubspec.lock is up to date
+        run: |
+          if git diff --quiet -- pubspec.lock; then exit 0; fi
+          changes=$(git diff -- pubspec.lock)
+          changes=${changes//'%'/'%25'}
+          changes=${changes//$'\r'/'%0D'}
+          changes=${changes//$'\n'/'%0A'}
+          echo "::error file=pubspec.lock,title=pubspec.lock is out of date::Run flutter pub get and commit pubspec.lock. It changed pubspec.lock like this:%0A%0A${changes}"
+          exit 1
+
       - name: Analyze
+        # Run even when pubspec.lock is out of date.
+        if: ${{ !cancelled() && steps.pub-get.outcome == 'success' }}
         run: |
           # Show each analyzer finding as an annotation on the commit.
           echo "::add-matcher::.github/problem-matchers/flutter-analyze.json"
