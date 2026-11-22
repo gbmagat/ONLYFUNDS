@@ -1,0 +1,46 @@
+{
+  "problemMatcher": [
+    {
+      "owner": "flutter-analyze-error",
+      "severity": "error",
+      "pattern": [
+        {
+          "regexp": "^\\s*error • (.+) • (.+):(\\d+):(\\d+) • (\\S+)$",
+          "message": 1,
+          "file": 2,
+          "line": 3,
+          "column": 4,
+          "code": 5
+        }
+      ]
+    },
+    {
+      "owner": "flutter-analyze-warning",
+      "severity": "warning",
+      "pattern": [
+        {
+          "regexp": "^\\s*warning • (.+) • (.+):(\\d+):(\\d+) • (\\S+)$",
+          "message": 1,
+          "file": 2,
+          "line": 3,
+          "column": 4,
+          "code": 5
+        }
+      ]
+    },
+    {
+      "owner": "flutter-analyze-info",
+      "severity": "notice",
+      "pattern": [
+        {
+          "regexp": "^\\s*info • (.+) • (.+):(\\d+):(\\d+) • (\\S+)$",
+          "message": 1,
+          "file": 2,
+          "line": 3,
+          "column": 4,
+          "code": 5
+        }
+      ]
+    }
+  ]
+}
