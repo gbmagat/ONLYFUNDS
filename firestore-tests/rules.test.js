@@ -17,6 +17,7 @@ import {
   getDocs,
   setDoc,
   setLogLevel,
+  updateDoc,
 } from 'firebase/firestore';
 
 const month = 'users/alice/monthly_records/2026-06';
@@ -43,6 +44,19 @@ beforeEach(async () => {
   await testEnv.clearFirestore();
 });
 
+// Writes alice's profile and one record of each kind, bypassing the rules, so
+// a test can act on documents that already exist. The rules check `create`
+// for a new document but `update` or `delete` for an existing one.
+async function seedAliceData() {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'users/alice'), { user_name: 'Alice' });
+    await setDoc(doc(db, `${month}/transactions/t1`), { amount: 500, type: 'expense' });
+    await setDoc(doc(db, `${month}/summary/record`), { balance: 9500, totalExpense: 500 });
+    await setDoc(doc(db, `${month}/goals/Travel Fund`), { amount: 2000 });
+  });
+}
+
 describe('the signed-in owner', () => {
   test('can write and read their profile', async () => {
     const db = testEnv.authenticatedContext('alice').firestore();
@@ -59,12 +73,31 @@ describe('the signed-in owner', () => {
     await assertSucceeds(setDoc(doc(db, `${month}/goals/Travel Fund`), { amount: 2000 }));
     await assertSucceeds(getDocs(collection(db, `${month}/transactions`)));
     await assertSucceeds(getDoc(doc(db, `${month}/summary/record`)));
+    await assertSucceeds(getDocs(collection(db, `${month}/goals`)));
+  });
+
+  test('can update existing records, as transactions, deposits, and profile edits do', async () => {
+    await seedAliceData();
+    const db = testEnv.authenticatedContext('alice').firestore();
+    await assertSucceeds(
+      setDoc(doc(db, `${month}/summary/record`), { balance: 9000, totalExpense: 1000 }, { merge: true }),
+    );
+    await assertSucceeds(
+      setDoc(doc(db, `${month}/goals/Travel Fund`), { amount: 2500 }, { merge: true }),
+    );
+    await assertSucceeds(updateDoc(doc(db, 'users/alice'), { user_name: 'Alice B.' }));
   });
 
   test('can list their months and delete their data, as account deletion does', async () => {
+    await seedAliceData();
     const db = testEnv.authenticatedContext('alice').firestore();
     await assertSucceeds(getDocs(collection(db, 'users/alice/monthly_records')));
+    for (const records of ['transactions', 'goals', 'summary']) {
+      await assertSucceeds(getDocs(collection(db, `${month}/${records}`)));
+    }
     await assertSucceeds(deleteDoc(doc(db, `${month}/transactions/t1`)));
+    await assertSucceeds(deleteDoc(doc(db, `${month}/goals/Travel Fund`)));
+    await assertSucceeds(deleteDoc(doc(db, `${month}/summary/record`)));
     await assertSucceeds(deleteDoc(doc(db, month)));
     await assertSucceeds(deleteDoc(doc(db, 'users/alice')));
   });
