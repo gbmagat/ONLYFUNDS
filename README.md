@@ -28,7 +28,7 @@ Amounts are displayed in Philippine pesos (₱). Savings contributions are recor
 - Saves each transaction, savings deposit, and savings goal together with its monthly totals in one atomic Firestore write, and uses `StreamBuilder` for live dashboard and history views.
 - Integrates client-side linear regression with insufficient-data and error states. Budget recommendations use spending thresholds rather than a trained recommendation model.
 - Restricts each user to their own Firestore records with owner-only security rules, which are tested against the local Firestore emulator.
-- Runs `flutter analyze`, `flutter test`, and the rules tests on GitHub Actions for every push and pull request, and reports problems as annotations on the commit.
+- Runs `flutter analyze`, `flutter test`, the rules tests, and an Android release build on GitHub Actions for every push and pull request, and reports problems as annotations on the commit.
 
 See [architecture and data model](docs/ARCHITECTURE.md) for implementation details and tradeoffs.
 
@@ -79,7 +79,7 @@ docs/                         # Setup, architecture, and demo notes
 test/                         # Unit and widget tests that run without Firebase
 firestore.rules               # Owner-only Firestore access rules
 firestore-tests/              # Emulator tests for the Firestore rules (Node.js)
-.github/workflows/ci.yml      # CI: analyzer, Flutter tests, and rules tests
+.github/workflows/ci.yml      # CI: analyzer, tests, rules tests, Android APK
 ```
 
 ## Status and next steps

@@ -37,7 +37,7 @@ Android is the simplest starting point on Windows. iOS requires macOS, Xcode, an
 
 ## Android release builds
 
-Release builds are signed with your own upload key when `android/key.properties` exists. Without that file they fall back to the debug key: `flutter run --release` works, but the build cannot be published to Google Play.
+Release builds are signed with your own upload key when `android/key.properties` exists. Without that file they fall back to the debug key: `flutter run --release` works, but the build cannot be published to Google Play. CI builds such a debug-signed release APK on every push; see [continuous integration](../CONTRIBUTING.md#continuous-integration) to download one and try the app on a phone without installing Flutter.
 
 1. Create an upload keystore. In PowerShell:
 

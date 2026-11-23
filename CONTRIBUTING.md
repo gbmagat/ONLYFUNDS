@@ -29,12 +29,13 @@ The first run downloads the Firestore emulator (about 140 MB) into `~/.cache/fir
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on every push to `main`, on every pull request, and on demand from the repository's **Actions** tab. It has two jobs:
+`.github/workflows/ci.yml` runs on every push to `main`, on every pull request, and on demand from the repository's **Actions** tab. It has three jobs:
 
 - **Flutter analyze and test** installs Flutter 3.35.1, the release recorded in `.metadata`. It runs `flutter pub get`, checks that `pubspec.lock` did not change, then runs `flutter analyze` and `flutter test`.
 - **Firestore rules tests** runs `npm ci` and `npm test` in `firestore-tests/` with Node.js 24 and Java 21.
+- **Android build** runs `flutter build apk --release` with Flutter 3.35.1 and JDK 17 and keeps the APK for 14 days. Without `android/key.properties`, the APK is signed with the debug key: it installs on a phone for testing but cannot be published to Google Play. To download it, sign in to GitHub, open a run in the **Actions** tab, and select `app-release.apk` under **Artifacts**. It connects to the Firebase project in `lib/firebase_options.dart`.
 
-Analyzer findings, failing Flutter and rules tests, and an out-of-date `pubspec.lock` show up as annotations on the commit or pull request, each pointing at the line involved, so you rarely need the job log. If `flutter pub get` or `npm ci` itself fails, the annotation only reports the exit code; the reason is in the job log, which needs a GitHub sign-in. GitHub keeps at most 10 annotations of each severity per step, so when `flutter analyze` fails, one more annotation gives its total issue count. `flutter analyze` fails on info-level lints as well as warnings and errors. If the lockfile check fails, run `flutter pub get` with Flutter 3.35.1 and commit `pubspec.lock`; the annotation shows what pub changed. When the project moves to a newer Flutter release, update `flutter-version` in the workflow.
+Analyzer findings, failing Flutter and rules tests, an out-of-date `pubspec.lock`, and Android build errors show up as annotations on the commit or pull request, each pointing at the line involved, so you rarely need the job log. If `flutter pub get` or `npm ci` itself fails, the annotation only reports the exit code; the reason is in the job log, which needs a GitHub sign-in. GitHub keeps at most 10 annotations of each severity per step, so when `flutter analyze` fails, one more annotation gives its total issue count. `flutter analyze` fails on info-level lints as well as warnings and errors. If the lockfile check fails, run `flutter pub get` with Flutter 3.35.1 and commit `pubspec.lock`; the annotation shows what pub changed. When the project moves to a newer Flutter release, update `flutter-version` in the workflow.
 
 ## Useful next contributions
 
