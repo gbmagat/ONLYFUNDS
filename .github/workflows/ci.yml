@@ -38,12 +38,20 @@ jobs:
 
       - name: Check that pubspec.lock is up to date
         run: |
-          if git diff --quiet -- pubspec.lock; then exit 0; fi
-          changes=$(git diff -- pubspec.lock)
-          changes=${changes//'%'/'%25'}
-          changes=${changes//$'\r'/'%0D'}
-          changes=${changes//$'\n'/'%0A'}
-          echo "::error file=pubspec.lock,title=pubspec.lock is out of date::Run flutter pub get and commit pubspec.lock. It changed pubspec.lock like this:%0A%0A${changes}"
+          # git status, unlike git diff, also reports a lockfile that the
+          # commit lacks and flutter pub get had to create.
+          state=$(git status --porcelain -- pubspec.lock)
+          if [ -z "$state" ]; then exit 0; fi
+          if [ "${state:0:2}" = "??" ]; then
+            message="pubspec.lock is missing from the commit, so flutter pub get had to create it. Run flutter pub get and commit pubspec.lock."
+          else
+            changes=$(git diff -- pubspec.lock)
+            changes=${changes//'%'/'%25'}
+            changes=${changes//$'\r'/'%0D'}
+            changes=${changes//$'\n'/'%0A'}
+            message="Run flutter pub get and commit pubspec.lock. It changed pubspec.lock like this:%0A%0A${changes}"
+          fi
+          echo "::error file=pubspec.lock,title=pubspec.lock is out of date::${message}"
           exit 1
 
       - name: Analyze
