@@ -104,32 +104,38 @@ describe('the signed-in owner', () => {
 });
 
 describe('anyone else', () => {
-  beforeEach(async () => {
-    await testEnv.withSecurityRulesDisabled(async (context) => {
-      const db = context.firestore();
-      await setDoc(doc(db, 'users/alice'), { user_name: 'Alice' });
-      await setDoc(doc(db, `${month}/transactions/t1`), { amount: 500, type: 'expense' });
-    });
-  });
+  beforeEach(() => seedAliceData());
 
   test("another user cannot read the owner's profile or records", async () => {
     const db = testEnv.authenticatedContext('bob').firestore();
     await assertFails(getDoc(doc(db, 'users/alice')));
     await assertFails(getDoc(doc(db, `${month}/transactions/t1`)));
+    await assertFails(getDoc(doc(db, `${month}/summary/record`)));
+    await assertFails(getDoc(doc(db, `${month}/goals/Travel Fund`)));
     await assertFails(getDocs(collection(db, `${month}/transactions`)));
+    await assertFails(getDocs(collection(db, `${month}/goals`)));
     await assertFails(getDocs(collection(db, 'users/alice/monthly_records')));
   });
 
   test("another user cannot write or delete the owner's data", async () => {
     const db = testEnv.authenticatedContext('bob').firestore();
     await assertFails(setDoc(doc(db, `${month}/transactions/t2`), { amount: 1 }));
+    await assertFails(setDoc(doc(db, `${month}/summary/record`), { balance: 0 }, { merge: true }));
+    await assertFails(setDoc(doc(db, `${month}/goals/Travel Fund`), { amount: 0 }));
     await assertFails(setDoc(doc(db, 'users/alice'), { user_name: 'Bob' }));
     await assertFails(deleteDoc(doc(db, `${month}/transactions/t1`)));
+  });
+
+  test('another user cannot create a profile for a uid that has none', async () => {
+    const db = testEnv.authenticatedContext('bob').firestore();
+    await assertFails(setDoc(doc(db, 'users/carol'), { user_name: 'Carol' }));
   });
 
   test('a signed-out visitor cannot read or write anything', async () => {
     const db = testEnv.unauthenticatedContext().firestore();
     await assertFails(getDoc(doc(db, 'users/alice')));
+    await assertFails(getDoc(doc(db, `${month}/summary/record`)));
+    await assertFails(getDocs(collection(db, `${month}/goals`)));
     await assertFails(setDoc(doc(db, 'users/mallory'), { user_name: 'Mallory' }));
   });
 });
