@@ -104,3 +104,53 @@ jobs:
       - run: npm ci
 
       - run: npm test
+
+  android:
+    name: Android build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # The Android Gradle plugin needs JDK 17 or later.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: 3.35.1
+          channel: stable
+          cache: true
+
+      - name: Build the release APK
+        run: |
+          # Without android/key.properties the release build is signed with
+          # the debug key: installable for testing, not publishable.
+          set +e
+          flutter build apk --release 2>&1 | tee "$RUNNER_TEMP/build.log"
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ]; then
+            # The job log needs a GitHub sign-in, so put the reason in an
+            # annotation: Dart compile errors, then Gradle's explanation.
+            reason=$({ grep -E ': Error: ' "$RUNNER_TEMP/build.log" | head -n 10; awk '/What went wrong/ { found = 1 } found' "$RUNNER_TEMP/build.log" | head -n 30; } || true)
+            [ -n "$reason" ] || reason=$(tail -n 30 "$RUNNER_TEMP/build.log")
+            reason=${reason//'%'/'%25'}
+            reason=${reason//$'\r'/'%0D'}
+            reason=${reason//$'\n'/'%0A'}
+            echo "::error title=Android build failed::${reason}"
+          fi
+          exit "$status"
+
+      - name: Upload the APK
+        uses: actions/upload-artifact@v7
+        with:
+          path: build/app/outputs/flutter-apk/app-release.apk
+          archive: false
+          retention-days: 14
+          if-no-files-found: error
