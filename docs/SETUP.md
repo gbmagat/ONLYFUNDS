@@ -20,7 +20,7 @@ The checked-in client configuration identifies the original Firebase project. Us
    ```
 
 5. Select your own project and mobile platforms. Verify that `lib/firebase_options.dart` and platform configuration files refer to your project. The Android application ID is currently `com.example.onlyfunds_v1`; the iOS bundle ID in the committed Firebase options is `com.example.onlyfundsV1`.
-6. Deploy the Firestore rules before using the app. All application records live under `users/{uid}`, and `firestore.rules` lets each signed-in user read and write only their own records, including nested monthly records. The [rules tests](../CONTRIBUTING.md#firestore-rules-tests) check this on the local emulator. From the repository root, run `firebase deploy --only firestore:rules`. The file does not show which rules are currently deployed; check the Firebase console.
+6. Deploy the Firestore rules before using the app. All application records live under `users/{uid}`, and `firestore.rules` lets each signed-in user read and write only their own records, including nested monthly records. The [rules tests](../CONTRIBUTING.md#firestore-rules-tests) check this on the local emulator. From the repository root, run `firebase deploy --only firestore:rules --project YOUR_PROJECT_ID` with the project ID shown in the Firebase console. The repository has no `.firebaserc`, so the CLI has no default project and stops with "No currently active project" without `--project`. The file does not show which rules are currently deployed; check the Firebase console.
 
 Do not leave a database open in test mode for a shared demo. Use disposable data. Never commit service-account credentials, private keys, or Firebase CLI tokens.
 
