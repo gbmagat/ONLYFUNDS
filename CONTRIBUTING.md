@@ -34,7 +34,7 @@ The first run downloads the Firestore emulator (about 140 MB) into `~/.cache/fir
 - **Flutter analyze and test** installs Flutter 3.35.1, the release recorded in `.metadata`. It runs `flutter pub get`, checks that `pubspec.lock` did not change, then runs `flutter analyze` and `flutter test`.
 - **Firestore rules tests** runs `npm ci` and `npm test` in `firestore-tests/` with Node.js 24 and Java 21.
 
-Analyzer findings, failing tests, and an out-of-date `pubspec.lock` show up as annotations on the commit or pull request, so you rarely need the job log. `flutter analyze` fails on info-level lints as well as warnings and errors. If the lockfile check fails, run `flutter pub get` with Flutter 3.35.1 and commit `pubspec.lock`; the annotation shows what pub changed. When the project moves to a newer Flutter release, update `flutter-version` in the workflow.
+Analyzer findings, failing Flutter and rules tests, and an out-of-date `pubspec.lock` show up as annotations on the commit or pull request, each pointing at the line involved, so you rarely need the job log. If `flutter pub get` or `npm ci` itself fails, the annotation only reports the exit code; the reason is in the job log, which needs a GitHub sign-in. `flutter analyze` fails on info-level lints as well as warnings and errors. If the lockfile check fails, run `flutter pub get` with Flutter 3.35.1 and commit `pubspec.lock`; the annotation shows what pub changed. When the project moves to a newer Flutter release, update `flutter-version` in the workflow.
 
 ## Useful next contributions
 
