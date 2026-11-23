@@ -41,8 +41,8 @@ See [architecture and data model](docs/ARCHITECTURE.md) for implementation detai
 - Your own Firebase project with Email/Password Authentication and Cloud Firestore enabled.
 
 ```sh
-git clone https://github.com/javieAlfaro/onlyfunds---budget-management-system.git
-cd onlyfunds---budget-management-system
+git clone https://github.com/gbmagat/ONLYFUNDS.git
+cd ONLYFUNDS
 flutter doctor
 flutter pub get
 ```
