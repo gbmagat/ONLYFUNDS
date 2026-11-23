@@ -66,7 +66,7 @@ Release builds are signed with your own upload key when `android/key.properties`
 | CI reports "pubspec.lock is out of date" | Run `flutter pub get` with Flutter 3.35.1 and commit `pubspec.lock`. The annotation shows the changes pub made. |
 | Email/password registration fails | Enable the Email/Password provider in the selected Firebase project. |
 | Firestore returns `permission-denied` | Confirm you are signed in and that `firestore.rules` is deployed to the selected project. |
-| `npm ci` fails in `firestore-tests` | Use Node.js 24.12 or later, which `@firebase/rules-unit-testing` 6 requires. |
+| Rules tests fail on an older Node.js | Use Node.js 24.12 or later, which `@firebase/rules-unit-testing` 6 requires. npm only warns about an older version (`EBADENGINE`) and installs anyway. |
 | Rules tests cannot start the emulator | Install Java 21 or later and make sure `java` is on your `PATH`. Port 8080 must be free, so stop any other Firestore emulator first. |
 | Unsupported Firebase platform | Committed options support Android/iOS only. Configure other platforms and verify plugin compatibility first. |
 | Empty dashboard/history | Add income first. These views read the current calendar month. |
