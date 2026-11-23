@@ -41,6 +41,16 @@
           "code": 5
         }
       ]
+    },
+    {
+      "owner": "flutter-analyze-summary",
+      "severity": "error",
+      "pattern": [
+        {
+          "regexp": "^(\\d+ issues? found\\..*)$",
+          "message": 1
+        }
+      ]
     }
   ]
 }
