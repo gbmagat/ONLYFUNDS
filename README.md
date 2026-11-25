@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/gbmagat/ONLYFUNDS/actions/workflows/ci.yml/badge.svg)](https://github.com/gbmagat/ONLYFUNDS/actions/workflows/ci.yml)
 
+![OnlyFunds, a personal budget management app built with Flutter and Firebase: track income and expenses, set monthly savings goals, and see spending reports and forecasts](docs/images/onlyfunds-cover.png)
+
 A Flutter mobile app for recording daily income and expenses, setting monthly savings goals, and reviewing spending patterns. OnlyFunds brings transaction tracking, Firebase-backed accounts, and experimental expense forecasting into one personal budgeting workflow.
 
 **Built with:** Flutter · Dart · Firebase Authentication · Cloud Firestore · `ml_algo`
